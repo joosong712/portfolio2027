@@ -7,7 +7,7 @@ window.PORTFOLIO_CONTACT = {
     email: 'zoosong2985@gmail.com',       // 이메일 주소
     phone: '01029859912',       // 전화번호 (공개를 원하지 않으면 비워두세요)
     resume: '',      // 이력서 PDF 주소
-    behance: 'zoosong298834c',     // Behance 프로필 주소
+    behance: 'https://www.behance.net/zoosong298834c',     // Behance 프로필 주소
     github: '',      // GitHub 프로필 주소
     blog: '',        // 블로그 주소
     instagram: '',   // Instagram 주소
