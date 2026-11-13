@@ -18,7 +18,7 @@ setTheme(savedTheme)
 themeButton.addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'))
 // ===== 데이터: 아래 값을 실제 정보로 교체하세요 (url이 null이면 링크가 만들어지지 않습니다) =====
 const BRAND = "JOO SONG PORTFOLIO"
-const CONTACT = {email:"",phone:"",resume:null,profiles:[]} // 실제 이메일을 입력하면 연락 기능이 활성화됩니다
+const CONTACT = window.PORTFOLIO_CONTACT || {}
 const CATEGORY_DESC = {custom:"프로젝트별 요구사항에 맞춰 개별 디자인과 퍼블리싱을 수행한 웹사이트",template:"기존 템플릿 또는 공통 구조를 활용해 디자인·콘텐츠·레이아웃을 수정하고 구현한 웹사이트"}
 const PAGE_SIZE = 6
 const hues = [[217,91],[200,80],[250,70],[170,60],[330,65],[28,85],[145,55],[280,60],[190,70]]
@@ -58,7 +58,7 @@ function safeURL(v) {if (!v) return null;try {const u = new URL(v,location.href)
 function cardHTML(p) {
     const href = safeURL(p.detail || p.url)
     const tag = href ? "a" : "div"
-    const attrs = href ? ` href="${href}" target="_blank" rel="noopener noreferrer"` : ""
+    const attrs = href ? ` href="${href}"` : ""
     const [h,s] = p.hue || [210,60]
     const art = p.thumb ? `<img class="thumb-art" src="${escapeHTML(p.thumb)}" alt="${escapeHTML(p.name)} 썸네일" loading="lazy" width="800" height="600">` : `<div class="thumb-art thumb-art-demo" style="background:linear-gradient(135deg,hsl(${h} ${s}% 58%),hsl(${h + 25} ${s}% 42%))"><div class="demo-browser" aria-hidden="true"><div class="demo-browser-bar"><i></i><i></i><i></i></div><div class="demo-browser-body"><strong></strong><em></em></div></div><span class="demo-caption">${escapeHTML(p.industry)} · WEB EXPERIENCE</span></div>`
     const meta = [p.industry, p.year, ...(Array.isArray(p.tech) ? p.tech : [])]
@@ -107,8 +107,18 @@ const items = []
 if (CONTACT.email) items.push(`<div class="contact-item"><dt>Email</dt><dd><a href="mailto:${escapeHTML(CONTACT.email)}">${escapeHTML(CONTACT.email)}</a></dd><button class="copy" type="button" id="copyMail">이메일 복사</button></div>`)
 if (CONTACT.phone) items.push(`<div class="contact-item"><dt>Phone</dt><dd><a href="tel:${CONTACT.phone.replace(/[^\d+]/g,"")}">${escapeHTML(CONTACT.phone)}</a></dd></div>`)
 if (safeURL(CONTACT.resume)) items.push(`<div class="contact-item"><dt>Resume</dt><dd><a href="${safeURL(CONTACT.resume)}" target="_blank" rel="noopener noreferrer">PDF 보기 ↗</a></dd></div>`)
-CONTACT.profiles.forEach(p => {if (safeURL(p.url)) items.push(`<div class="contact-item"><dt>${escapeHTML(p.label)}</dt><dd><a href="${safeURL(p.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(p.label)} 바로가기 ↗</a></dd></div>`)})
-if (!items.length) items.push('<div class="contact-item"><dt>Contact</dt><dd>연락처 등록 예정</dd><small>assets/js/main.js의 CONTACT 데이터에 이메일 등을 입력해 주세요.</small></div>')
+const CONTACT_LINKS = [
+    {label:'Behance', url:CONTACT.behance},
+    {label:'GitHub', url:CONTACT.github},
+    {label:'Blog', url:CONTACT.blog},
+    {label:'Instagram', url:CONTACT.instagram},
+    {label:'Website', url:CONTACT.website}
+]
+CONTACT_LINKS.forEach(({label,url}) => {
+    const href = safeURL(url)
+    if (href) items.push(`<div class="contact-item"><dt>${label}</dt><dd><a href="${href}" target="_blank" rel="noopener noreferrer">${label} 바로가기 ↗</a></dd></div>`)
+})
+if (!items.length) items.push('<div class="contact-item"><dt>Contact</dt><dd>연락처 등록 예정</dd><small>assets/js/contact.js 파일에서 연락처를 입력해 주세요.</small></div>')
 list.innerHTML = items.join("")
 const cta = []
 if (CONTACT.email) cta.push(`<a class="btn btn-primary" href="mailto:${escapeHTML(CONTACT.email)}">이메일 보내기 ↗</a>`)

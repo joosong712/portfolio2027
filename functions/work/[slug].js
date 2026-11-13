@@ -36,6 +36,11 @@ export async function onRequestGet({params, request, env}) {
     const html = `<!doctype html>
 <html lang="ko">
     <head>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="manifest" href="/site.webmanifest">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>${title} | JOO SONG PORTFOLIO</title>
@@ -51,12 +56,13 @@ export async function onRequestGet({params, request, env}) {
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
         <link rel="stylesheet" href="/assets/css/work.css">
+        <script src="/assets/js/work.js" defer></script>
     </head>
     <body>
         <header class="work-header">
             <div class="work-wrap work-header-inner">
                 <a class="work-brand" href="/">JOO SONG <span>PORTFOLIO</span></a>
-                <a class="work-back" href="/#portfolio">← 프로젝트 목록</a>
+                <a class="work-back" href="/#portfolio" data-project-back>← 뒤로가기</a>
             </div>
         </header>
         <main class="work-wrap">
