@@ -1,0 +1,62 @@
+import {json, requireAdmin} from '../../_shared.js'
+
+const MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct'
+
+export async function onRequestPost(context) {
+    const denied = await requireAdmin(context)
+    if (denied) return denied
+    if (!context.env.AI) return json({error:'Workers AI 바인딩 AI가 연결되지 않았습니다.'}, 503)
+
+    try {
+        const form = await context.request.formData()
+        const name = String(form.get('name') || '').trim().slice(0, 120)
+        const industry = String(form.get('industry') || '').trim().slice(0, 100)
+        const role = String(form.get('role') || '').trim().slice(0, 180)
+        const workTags = String(form.get('work_tags') || '').trim().slice(0, 400)
+        if (!name) return json({error:'프로젝트명을 입력하세요.'}, 400)
+
+        const images = form.getAll('images').filter(item => item instanceof File && item.size)
+        if (images.length > 3) return json({error:'한 번에 분석할 이미지는 최대 3장입니다.'}, 400)
+        const imageUrls = []
+        for (const image of images) {
+            if (image.type !== 'image/jpeg' || image.size > 2 * 1024 * 1024) {
+                return json({error:'AI 분석 이미지는 장당 JPEG 2MB 이하여야 합니다.'}, 400)
+            }
+            const bytes = new Uint8Array(await image.arrayBuffer())
+            if (!(bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255)) {
+                return json({error:'이미지 데이터가 유효하지 않습니다.'}, 400)
+            }
+            let binary = ''
+            for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
+            imageUrls.push(`data:image/jpeg;base64,${btoa(binary)}`)
+        }
+
+        const instructions = [
+            '당신은 한국어 웹디자인·퍼블리싱 포트폴리오의 프로젝트 소개 편집자입니다.',
+            '사용자가 제공한 프로젝트명, 업종, 담당 업무, 선택한 작업 분야와 이미지에 보이는 요소를 근거로 자연스러운 한국어 프로젝트 소개를 2~3문장, 전체 100~180자 내외로 작성하세요.',
+            '이미지가 있으면 실제 관찰되는 색상, 화면 구성, 레이아웃, 콘텐츠 표현 방식 가운데 해당 프로젝트를 구별하는 특징을 우선 설명하세요. 확인되는 특징이 없다면 꾸며내지 마세요.',
+            '사용하지 않았다고 명시된 기술이나 관찰 불가능한 구현 기술, 성과 수치, 실제 사용자 반응, 제작 의도는 추측하거나 만들어내지 마세요.',
+            '웹사이트, 전문성, 신뢰성, 사용자 편의성 같은 일반적인 표현을 반복하지 마세요. "~해야 했습니다", "제가 담당한 업무를 통해" 등 자기소개식 서술과 연속된 "~했습니다" 문장을 피하세요.',
+            '과장 표현, 모호한 성과, 이모지, 소제목, 불릿, 마크다운을 쓰지 마세요. 완성된 소개 문장만 출력하세요.',
+            `프로젝트명: ${name}`,
+            `업종: ${industry || '미입력'}`,
+            `담당업무: ${role || '미입력'}`,
+            `선택한 작업 분야: ${workTags || '미선택'}`,
+            imageUrls.length ? '함께 전달한 이미지는 긴 홈페이지 캡처의 상단·중단·하단 구간입니다. 모든 이미지의 공통 구조를 살펴보고 실제 확인되는 요소만 설명하세요. 작은 글씨는 읽히지 않으면 추정하지 마세요.' : '이미지는 제공되지 않았습니다. 화면 특징을 임의로 만들어내지 마세요.'
+        ].join('\n')
+
+        const content = imageUrls.length ? [
+            {type:'text', text:instructions},
+            ...imageUrls.map(url => ({type:'image_url', image_url:{url}}))
+        ] : instructions
+        const result = await context.env.AI.run(MODEL, {
+            messages:[{role:'user', content}], max_tokens:480, temperature:0.35
+        })
+        const output = typeof result?.response === 'string' ? result.response : result?.choices?.[0]?.message?.content
+        const summary = String(output || '').trim().replace(/^```(?:text)?\s*|\s*```$/g,'').slice(0, 2000)
+        if (!summary) return json({error:'AI가 소개글을 생성하지 못했습니다. 다시 시도해 주세요.'}, 502)
+        return json({summary, analyzed_image: imageUrls.length > 0, analyzed_image_count: imageUrls.length})
+    } catch (error) {
+        return json({error:'AI 분석 요청에 실패했습니다. 모델 이용 가능 여부와 요금제, AI 바인딩을 확인해 주세요.'}, 502)
+    }
+}
