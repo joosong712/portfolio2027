@@ -65,7 +65,6 @@ export async function onRequestGet({params, request, env}) {
                 <h1 class="work-title" id="work-title">${title}</h1>
                 ${meta ? `<div class="work-meta">${meta}</div>` : ''}
             </section>
-            ${detailKey ? `<figure class="work-capture"><img src="${image}" alt="${title} 웹사이트 전체 디자인" width="1100"></figure>` : ''}
             <section class="work-description" aria-labelledby="work-description-title">
                 <h2 id="work-description-title">프로젝트 소개</h2>
                 <div class="work-description-body">
@@ -74,6 +73,7 @@ export async function onRequestGet({params, request, env}) {
                     ${safeSite ? `<a class="work-button" target="_blank" rel="noopener noreferrer" href="${escapeHtml(safeSite)}">실제 사이트 보기 ↗</a>` : ''}
                 </div>
             </section>
+            ${detailKey ? `<figure class="work-capture"><img src="${image}" alt="${title} 웹사이트 전체 디자인" width="1100" loading="lazy"></figure>` : ''}
         </main>
         <footer class="work-wrap work-footer"><span>© JOO SONG PORTFOLIO</span><a href="/#portfolio">모든 프로젝트 보기 ↗</a></footer>
     </body>

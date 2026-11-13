@@ -3,6 +3,9 @@ const list = $('project-list')
 const status = $('status')
 const form = $('form')
 let projects = []
+let selectedTech = new Set()
+let aiRequestNumber = 0
+let aiDebounceTimer
 
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[char]))
 const read = id => $(id).value.trim()
@@ -24,7 +27,11 @@ function setPreview(id, url) {
 }
 
 function clearForm() {
+    aiRequestNumber++
+    clearTimeout(aiDebounceTimer)
     form.reset()
+    setTech([])
+    $('ai-feedback').textContent = ''
     $('project-id').value = ''
     $('image-key').value = ''
     $('detail-image-key').value = ''
@@ -47,7 +54,7 @@ function editProject(id) {
         $(field).value = project[field] ?? ''
     }
     $('sort-order').value = project.sort_order ?? 0
-    $('tech').value = (project.tech || []).join(', ')
+    setTech(project.tech || [])
     $('published').checked = Boolean(project.published)
     setPreview('preview', project.image_url)
     setPreview('detail-preview', project.detail_image_key ? project.detail_image_url : '')
@@ -146,7 +153,7 @@ form.addEventListener('submit', async event => {
             industry:read('industry'), role:read('role'), year:read('year'),
             summary:read('summary'), url:read('url'),
             sort_order:Number(read('sort-order') || 0),
-            tech:read('tech').split(',').map(value => value.trim()).filter(Boolean),
+            tech:getTech(),
             image_key:thumbnailKey, detail_image_key:detailKey,
             published:$('published').checked
         }
@@ -168,3 +175,81 @@ form.addEventListener('submit', async event => {
 })
 
 loadProjects()
+
+// 공통 작업 분야 태그: 버튼은 접근 가능한 토글, 직접 입력은 선택 항목과 중복 제거.
+function setTech(items) {
+    const known = new Set([...document.querySelectorAll('[data-tech]')].map(button => button.dataset.tech))
+    selectedTech = new Set(items.filter(item => known.has(item)))
+    $('tech-extra').value = items.filter(item => !known.has(item)).join(', ')
+    for (const button of document.querySelectorAll('[data-tech]')) {
+        const active = selectedTech.has(button.dataset.tech)
+        button.classList.toggle('is-active', active)
+        button.setAttribute('aria-pressed', String(active))
+    }
+}
+function getTech() {
+    const custom = read('tech-extra').split(',').map(item => item.trim()).filter(Boolean)
+    return [...new Set([...selectedTech, ...custom])].slice(0, 15)
+}
+$('tech-options').addEventListener('click', event => {
+    const button = event.target.closest('button[data-tech]')
+    if (!button) return
+    if (selectedTech.has(button.dataset.tech)) selectedTech.delete(button.dataset.tech)
+    else selectedTech.add(button.dataset.tech)
+    button.classList.toggle('is-active', selectedTech.has(button.dataset.tech))
+    button.setAttribute('aria-pressed', String(selectedTech.has(button.dataset.tech)))
+})
+
+// 세로로 긴 캡처는 AI 입력용 사본만 축소. 등록용 R2 원본에는 영향 없음.
+async function analysisImage(file) {
+    if (!file) return null
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw Error('지원하지 않는 이미지 형식입니다.')
+    const image = await createImageBitmap(file)
+    try {
+        const scale = Math.min(1, 1024 / image.width, 1400 / image.height)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(image.width * scale))
+        canvas.height = Math.max(1, Math.round(image.height * scale))
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+        return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(Error('이미지 축소 실패')), 'image/jpeg', 0.82))
+    } finally {
+        image.close()
+    }
+}
+async function generateSummary() {
+    const file = $('detail-file').files?.[0] || $('file').files?.[0]
+    const name = read('name')
+    const requestNumber = ++aiRequestNumber
+    if (!name) {
+        $('ai-feedback').textContent = '프로젝트명을 먼저 입력해 주세요.'
+        return
+    }
+    const button = $('generate-summary')
+    button.disabled = true
+    $('ai-feedback').textContent = '프로젝트 소개 초안을 생성하고 있습니다...'
+    try {
+        const payload = new FormData()
+        payload.append('name', name)
+        payload.append('industry', read('industry'))
+        payload.append('role', read('role'))
+        payload.append('work_tags', getTech().join(', '))
+        if (file) payload.append('image', await analysisImage(file), 'analysis.jpg')
+        const result = await api('/api/admin/generate-summary', {method:'POST', body:payload})
+        if (requestNumber !== aiRequestNumber) return
+        if ($('summary').value.trim() && !confirm('기존 소개글을 AI 초안으로 교체할까요?')) return
+        $('summary').value = result.summary
+        $('ai-feedback').textContent = file ? '이미지와 입력 정보를 참고한 AI 초안입니다. 실제 구현 내용과 일치하는지 확인해 주세요.' : '입력 정보를 기반으로 생성된 AI 초안입니다. 이미지를 선택하면 디자인 분석이 가능합니다.'
+    } catch (error) {
+        if (requestNumber === aiRequestNumber) $('ai-feedback').textContent = `AI 생성 실패: ${error.message}`
+    } finally {
+        if (requestNumber === aiRequestNumber) button.disabled = false
+    }
+}
+$('generate-summary').addEventListener('click', generateSummary)
+for (const id of ['file', 'detail-file']) {
+    $(id).addEventListener('change', () => {
+        clearTimeout(aiDebounceTimer)
+        if (!$(id).files?.length) return
+        aiDebounceTimer = setTimeout(generateSummary, 600)
+    })
+}

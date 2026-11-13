@@ -37,3 +37,12 @@ footer {padding:20px;text-align:center;color:#8b95a1;font-size:12px}
 .admin-accent {color:#3182f6}
 
 .preview-detail {max-height:250px;object-fit:contain;object-position:top left;background:#f5f7fa}
+
+.tag-options {display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 3px}
+.tag-option {padding:8px 12px;border:1px solid #d9e0e9;background:#fff;color:#41546b;border-radius:100px;font-size:13px}
+.tag-option.is-active {background:#3182f6;color:#fff;border-color:#3182f6}
+.tag-option:focus-visible {outline:2px solid #3182f6;outline-offset:2px}
+.ai-actions {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.ai-note {font-size:12px;color:#788597}
+.ai-feedback {margin:7px 0;font-size:12px;color:#3269b9;white-space:pre-line}
+button:disabled {cursor:wait;opacity:.6}
