@@ -19,7 +19,7 @@ themeButton.addEventListener('click', () => setTheme(document.documentElement.da
 // ===== 데이터: 아래 값을 실제 정보로 교체하세요 (url이 null이면 링크가 만들어지지 않습니다) =====
 const BRAND = "JOO SONG PORTFOLIO"
 const CONTACT = window.PORTFOLIO_CONTACT || {}
-const CATEGORY_DESC = {template:"다양한 업종과 목적에 맞춰 디자인하고 구현한 웹사이트 템플릿을 소개합니다.",custom:"프로젝트의 특성과 요구사항을 반영해 디자인부터 퍼블리싱까지 진행한 작업을 소개합니다."}
+const CATEGORY_DESC = {template:"다양한 업종과 목적에 맞춰 디자인하고 구현한 웹사이트 템플릿을 소개합니다.",custom:"프로젝트의 특성과 목적에 맞춰 개별적으로 기획하고 디자인한 웹사이트 작업을 소개합니다."}
 const PAGE_SIZE = 6
 const hues = [[217,91],[200,80],[250,70],[170,60],[330,65],[28,85],[145,55],[280,60],[190,70]]
 let PROJECTS = []
