@@ -12,7 +12,7 @@ export async function onRequest(ctx){
   const origin=publicOrigin(env,request)
   html=html.replaceAll('__SITE_URL__',origin)
   try{
-    const data=await env.DB.prepare('SELECT * FROM projects WHERE published=1 AND category=? ORDER BY sort_order ASC, id DESC LIMIT 6').bind('custom').all()
+    const data=await env.DB.prepare('SELECT * FROM projects WHERE published=1 AND category=? ORDER BY sort_order ASC, id DESC LIMIT 6').bind('template').all()
     html=html.replace('<!--SSR_PROJECTS-->',cards(data.results,origin)||'<p class="project-empty">아직 공개된 프로젝트가 없습니다.</p>')
   }catch{html=html.replace('<!--SSR_PROJECTS-->','<p class="project-empty">프로젝트를 불러오지 못했습니다.</p>')}
   return new Response(html,{headers:{'content-type':'text/html;charset=utf-8','cache-control':'public,max-age=60','x-content-type-options':'nosniff'}})

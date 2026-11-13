@@ -19,7 +19,7 @@ themeButton.addEventListener('click', () => setTheme(document.documentElement.da
 // ===== 데이터: 아래 값을 실제 정보로 교체하세요 (url이 null이면 링크가 만들어지지 않습니다) =====
 const BRAND = "JOO SONG PORTFOLIO"
 const CONTACT = window.PORTFOLIO_CONTACT || {}
-const CATEGORY_DESC = {custom:"프로젝트별 요구사항에 맞춰 개별 디자인과 퍼블리싱을 수행한 웹사이트",template:"기존 템플릿 또는 공통 구조를 활용해 디자인·콘텐츠·레이아웃을 수정하고 구현한 웹사이트"}
+const CATEGORY_DESC = {template:"다양한 업종과 목적에 맞춰 디자인하고 구현한 웹사이트 템플릿을 소개합니다.",custom:"프로젝트의 특성과 요구사항을 반영해 디자인부터 퍼블리싱까지 진행한 작업을 소개합니다."}
 const PAGE_SIZE = 6
 const hues = [[217,91],[200,80],[250,70],[170,60],[330,65],[28,85],[145,55],[280,60],[190,70]]
 let PROJECTS = []
@@ -47,7 +47,7 @@ const group = `<div class="marquee-group">${KEYWORDS.map(k => `<span>${k}</span>
 marquee.innerHTML = group + group.replace('class="marquee-group"','class="marquee-group" aria-hidden="true"')
 
 // ===== 탭 + 그리드 =====
-const state = {cat:"custom",shown:{custom:PAGE_SIZE,template:PAGE_SIZE}}
+const state = {cat:"template",shown:{custom:PAGE_SIZE,template:PAGE_SIZE}}
 const grid = document.getElementById("grid")
 const moreBtn = document.getElementById("more")
 const tabs = [...document.querySelectorAll(".tab")]
