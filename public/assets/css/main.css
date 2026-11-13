@@ -318,4 +318,4 @@ html[data-theme="dark"] .portfolio {background:#1a1a1c}
 .brand-accent {color:var(--blue)}
 .project-cover {object-fit:cover;width:100%;height:100%;padding:0}
 
-.thumb-art {object-fit:cover;object-position:center top}
+.thumb img.thumb-art {width:100%;height:100%;padding:0;object-fit:cover;object-position:center}
