@@ -35,3 +35,5 @@ footer {padding:20px;text-align:center;color:#8b95a1;font-size:12px}
 @media(max-width:830px) {main {grid-template-columns:1fr;margin:20px auto}.panel {padding:20px}}
 @media(max-width:520px) {.item {grid-template-columns:60px 1fr;gap:9px}.item img {width:60px;height:60px}.item .actions {grid-column:2}.fields {grid-template-columns:1fr}}
 .admin-accent {color:#3182f6}
+
+.preview-detail {max-height:250px;object-fit:contain;object-position:top left;background:#f5f7fa}

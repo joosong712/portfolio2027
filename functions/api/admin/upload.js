@@ -3,8 +3,10 @@ export async function onRequestPost(ctx){
   const denied=await requireAdmin(ctx);if(denied)return denied
   try{
     const form=await ctx.request.formData(),file=form.get('file')
+    const kind=form.get('kind')==='detail'?'detail':'thumbnail'
+    const maxBytes=kind==='detail'?15*1024*1024:5*1024*1024
     if(!(file instanceof File))return json({error:'이미지 파일이 필요합니다.'},400)
-    if(file.size<1 || file.size>5*1024*1024)return json({error:'이미지는 5MB 이하만 가능합니다.'},400)
+    if(file.size<1 || file.size>maxBytes)return json({error:kind==='detail'?'상세 이미지는 15MB 이하만 가능합니다.':'썸네일은 5MB 이하만 가능합니다.'},400)
     const bytes=new Uint8Array(await file.arrayBuffer())
     const jpg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255
     const png=bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71&&bytes[4]===13

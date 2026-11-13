@@ -1,16 +1,83 @@
-import {escapeHtml,publicOrigin} from '../_shared.js'
-export async function onRequestGet({params,request,env}){
-  const slug=params.slug
-  if(!/^[a-z0-9][a-z0-9-]{2,90}$/.test(slug))return new Response('Not found',{status:404})
-  let p
-  try{p=await env.DB.prepare('SELECT * FROM projects WHERE slug=? AND published=1 LIMIT 1').bind(slug).first()}
-  catch{return new Response('Unavailable',{status:503})}
-  if(!p)return new Response('Not found',{status:404})
-  const o=publicOrigin(env,request),title=escapeHtml(p.title),summary=escapeHtml(p.summary||`${p.title} 프로젝트를 소개합니다.`)
-  const url=`${o}/work/${slug}`,image=p.image_key?`${o}/media/${p.image_key}`:`${o}/og-image.png`
-  const safeSite=p.site_url&&/^https?:\/\//i.test(p.site_url)?p.site_url:null
-  const tech=JSON.parse(p.tech_json||'[]')
-  const jsonld=JSON.stringify({'@context':'https://schema.org','@type':'CreativeWork',name:p.title,description:p.summary||p.title,url,image,creator:{'@type':'Person',name:'주송'},dateCreated:p.year?String(p.year):undefined}).replace(/</g,'\\u003c')
-  const content=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} | JOO SONG PORTFOLO</title><meta name="description" content="${escapeHtml((p.summary||`${p.title} 프로젝트 - ${p.role||'웹디자인'}`).slice(0,160))}"><link rel="canonical" href="${url}"><meta property="og:type" content="article"><meta property="og:title" content="${title} | JOO SONG PORTFOLO"><meta property="og:description" content="${summary}"><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta name="twitter:card" content="summary_large_image"><script type="application/ld+json">${jsonld}</script><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"><style>*{box-sizing:border-box}body{margin:0;background:#f9fafb;color:#191f28;font:16px/1.75 Pretendard,sans-serif}main{max-width:1024px;margin:auto;padding:80px 24px 120px}a{color:#3182f6}h1{font-size:clamp(36px,5vw,72px);line-height:1.2;letter-spacing:-.04em}h1,small{font-weight:700}.eng{font-family:Outfit,sans-serif}.pill{padding:9px 16px;background:#e8f3ff;border-radius:999px;color:#3182f6}img{max-width:100%;height:auto;border-radius:24px}p{white-space:pre-line}.meta{color:#667085}.btn{display:inline-block;border-radius:999px;background:#3182f6;padding:13px 23px;color:white;text-decoration:none;margin-top:20px}</style></head><body><main><a href="/#portfolio" class="eng">← JOO SONG PORTFOLO</a><div style="margin:36px 0 18px"><span class="pill">${p.category==='custom'?'제작형':'템플릿'}</span></div><h1>${title}</h1><p class="meta">${escapeHtml(p.industry)}${p.year?' · '+p.year:''} · ${escapeHtml(p.role)}</p>${p.image_key?`<img src="${image}" alt="${title} 프로젝트 이미지" width="1000">`:''}<h2>프로젝트 소개</h2><p>${summary}</p>${tech.length?`<p class="meta">사용 기술: ${tech.map(escapeHtml).join(' · ')}</p>`:''}${safeSite?`<a class="btn" target="_blank" rel="noopener noreferrer" href="${escapeHtml(safeSite)}">실제 사이트 보기 ↗</a>`:''}</main></body></html>`
-  return new Response(content,{headers:{'content-type':'text/html;charset=utf-8','cache-control':'public,max-age=60','x-content-type-options':'nosniff'}})
+import {escapeHtml, publicOrigin} from '../_shared.js'
+
+export async function onRequestGet({params, request, env}) {
+    const slug = params.slug
+    if (!/^[a-z0-9][a-z0-9-]{2,90}$/.test(slug)) return new Response('Not found', {status:404})
+
+    let project
+    try {
+        project = await env.DB.prepare('SELECT * FROM projects WHERE slug=? AND published=1 LIMIT 1').bind(slug).first()
+    } catch {
+        return new Response('Unavailable', {status:503})
+    }
+    if (!project) return new Response('Not found', {status:404})
+
+    const origin = publicOrigin(env, request)
+    const title = escapeHtml(project.title)
+    const rawSummary = project.summary || `${project.title} 프로젝트를 소개합니다.`
+    const summary = escapeHtml(rawSummary)
+    const url = `${origin}/work/${slug}`
+    const detailKey = project.detail_image_key || project.image_key
+    const image = detailKey ? `${origin}/media/${detailKey}` : `${origin}/og-image.png`
+    const thumbnail = project.image_key ? `${origin}/media/${project.image_key}` : image
+    const safeSite = project.site_url && /^https?:\/\//i.test(project.site_url) ? project.site_url : null
+    const tech = JSON.parse(project.tech_json || '[]')
+    const meta = [
+        project.industry ? `<span><b>INDUSTRY</b> ${escapeHtml(project.industry)}</span>` : '',
+        project.year ? `<span><b>YEAR</b> ${project.year}</span>` : '',
+        project.role ? `<span><b>ROLE</b> ${escapeHtml(project.role)}</span>` : ''
+    ].filter(Boolean).join('')
+    const jsonld = JSON.stringify({
+        '@context':'https://schema.org', '@type':'CreativeWork', name:project.title,
+        description:rawSummary, url, image, creator:{'@type':'Person', name:'주송'},
+        dateCreated:project.year ? String(project.year) : undefined
+    }).replace(/</g, '\u003c')
+
+    const html = `<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>${title} | JOO SONG PORTFOLIO</title>
+        <meta name="description" content="${escapeHtml(rawSummary.slice(0,160))}">
+        <link rel="canonical" href="${url}">
+        <meta property="og:type" content="article">
+        <meta property="og:title" content="${title} | JOO SONG PORTFOLIO">
+        <meta property="og:description" content="${escapeHtml(rawSummary.slice(0,160))}">
+        <meta property="og:url" content="${url}">
+        <meta property="og:image" content="${thumbnail}">
+        <meta name="twitter:card" content="summary_large_image">
+        <script type="application/ld+json">${jsonld}</script>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/css/work.css">
+    </head>
+    <body>
+        <header class="work-header">
+            <div class="work-wrap work-header-inner">
+                <a class="work-brand" href="/">JOO SONG <span>PORTFOLIO</span></a>
+                <a class="work-back" href="/#portfolio">← 프로젝트 목록</a>
+            </div>
+        </header>
+        <main class="work-wrap">
+            <section class="work-hero" aria-labelledby="work-title">
+                <p class="work-kicker">${project.category === 'custom' ? 'CUSTOM PROJECT' : 'TEMPLATE PROJECT'}</p>
+                <h1 class="work-title" id="work-title">${title}</h1>
+                ${meta ? `<div class="work-meta">${meta}</div>` : ''}
+            </section>
+            ${detailKey ? `<figure class="work-capture"><img src="${image}" alt="${title} 웹사이트 전체 디자인" width="1100"></figure>` : ''}
+            <section class="work-description" aria-labelledby="work-description-title">
+                <h2 id="work-description-title">프로젝트 소개</h2>
+                <div class="work-description-body">
+                    <p class="work-summary">${summary}</p>
+                    ${tech.length ? `<div class="work-tags">${tech.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+                    ${safeSite ? `<a class="work-button" target="_blank" rel="noopener noreferrer" href="${escapeHtml(safeSite)}">실제 사이트 보기 ↗</a>` : ''}
+                </div>
+            </section>
+        </main>
+        <footer class="work-wrap work-footer"><span>© JOO SONG PORTFOLIO</span><a href="/#portfolio">모든 프로젝트 보기 ↗</a></footer>
+    </body>
+</html>`
+
+    return new Response(html, {headers:{'content-type':'text/html; charset=utf-8', 'cache-control':'public,max-age=60', 'x-content-type-options':'nosniff'}})
 }

@@ -18,6 +18,7 @@
                 <form id="form">
                     <input id="project-id" type="hidden">
                     <input id="image-key" type="hidden">
+                    <input id="detail-image-key" type="hidden">
                     <label for="name">프로젝트명 *</label>
                     <input id="name" maxlength="120" placeholder="예: 브랜드 리뉴얼 홈페이지" required="">
                     <div class="fields">
@@ -54,9 +55,13 @@
                     <textarea id="summary" maxlength="2000" placeholder="제작 목적과 담당 업무를 간단히 입력하세요."></textarea>
                     <label for="url">실제 사이트 URL</label>
                     <input id="url" placeholder="https://example.com" type="url">
-                    <label for="file">썸네일 이미지 (JPG · PNG · WebP, 5MB 이하)</label>
+                    <label for="file">목록 썸네일 (4:3 권장 · JPG/PNG/WebP · 5MB 이하)</label>
                     <input accept="image/jpeg,image/png,image/webp" id="file" type="file">
-                    <img alt="등록 이미지 미리보기" class="preview" id="preview">
+                    <img alt="썸네일 미리보기" class="preview" id="preview">
+                    <label for="detail-file">상세 페이지 풀 이미지 (세로 캡처 · JPG/PNG/WebP · 15MB 이하)</label>
+                    <input accept="image/jpeg,image/png,image/webp" id="detail-file" type="file">
+                    <img alt="상세 이미지 미리보기" class="preview preview-detail" id="detail-preview">
+                    <div class="help">썸네일과 상세용 이미지를 각각 등록할 수 있습니다. 상세 이미지가 비어 있으면 기존 썸네일을 대신 표시합니다. 큰 전체 캡처는 WebP 압축을 권장합니다.</div>
                     <div class="help">이미지 교체 시 기존 파일은 서버에 남을 수 있습니다. 정기적인 R2 파일 정리가 필요합니다.</div>
                     <div class="check">
                         <input id="published" type="checkbox">
@@ -64,7 +69,7 @@
                     </div>
                     <div class="actions">
                         <button class="primary" id="submit" type="submit">프로젝트 등록</button>
-                        <button class="ghost" id="reset" type="button">새로 작성</button>
+                        <button class="ghost" id="clear-form" type="button">새로 작성</button>
                     </div>
                     <p aria-live="polite" class="status" id="status" role="status"></p>
                 </form>

@@ -8,8 +8,8 @@ export function publicOrigin(env, request) {
   try {return new URL(env.SITE_URL||request.url).origin} catch {return new URL(request.url).origin}
 }
 export function projectRecord(row, origin, admin=false) {
-  const p={id:row.id,slug:row.slug,name:row.title,category:row.category,industry:row.industry||'',role:row.role||'',year:row.year||null,tech:JSON.parse(row.tech_json||'[]'),summary:row.summary||'',url:row.site_url||null,image_url:row.image_key?`${origin}/media/${row.image_key}`:null,sort_order:row.sort_order||0}
-  if(admin) {p.published=!!row.published;p.image_key=row.image_key||null}
+  const p={id:row.id,slug:row.slug,name:row.title,category:row.category,industry:row.industry||'',role:row.role||'',year:row.year||null,tech:JSON.parse(row.tech_json||'[]'),summary:row.summary||'',url:row.site_url||null,image_url:row.image_key?`${origin}/media/${row.image_key}`:null,detail_image_url:(row.detail_image_key||row.image_key)?`${origin}/media/${row.detail_image_key||row.image_key}`:null,sort_order:row.sort_order||0}
+  if(admin) {p.published=!!row.published;p.image_key=row.image_key||null;p.detail_image_key=row.detail_image_key||null}
   return p
 }
 function decodeBase64Url(str){const base=str.replace(/-/g,'+').replace(/_/g,'/');const binary=atob(base.padEnd(Math.ceil(base.length/4)*4,'='));return Uint8Array.from(binary,c=>c.charCodeAt(0))}
@@ -53,10 +53,11 @@ export function cleanProject(input){
   const tech=Array.isArray(input.tech)?input.tech.map(x=>String(x).trim()).filter(Boolean):[]
   if(tech.length>15 || tech.some(t=>t.length>45))throw Error('기술 태그를 확인하세요.')
   const imageKey=String(input.image_key||'').trim()||null
-  if(imageKey&&!/^[a-f0-9-]{36}\.(webp|png|jpg)$/.test(imageKey))throw Error('이미지 키가 올바르지 않습니다.')
+  const detailImageKey=String(input.detail_image_key||'').trim()||null
+  if([imageKey,detailImageKey].some(key=>key&&!/^[a-f0-9-]{36}\.(webp|png|jpg)$/.test(key)))throw Error('이미지 키가 올바르지 않습니다.')
   const slug=String(input.slug||'').trim()||('project-'+crypto.randomUUID().slice(0,12))
   if(!/^[a-z0-9][a-z0-9-]{2,90}$/.test(slug))throw Error('슬러그는 영문 소문자·숫자·하이픈으로 입력하세요.')
   const sort=Number(input.sort_order||0)
   if(!Number.isInteger(sort)||Math.abs(sort)>100000)throw Error('정렬 순서가 올바르지 않습니다.')
-  return {title,category,industry,role,summary,year,siteURL,tech,imageKey,slug,sort,published:input.published===true}
+  return {title,category,industry,role,summary,year,siteURL,tech,imageKey,detailImageKey,slug,sort,published:input.published===true}
 }

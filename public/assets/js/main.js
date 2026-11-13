@@ -61,7 +61,12 @@ function cardHTML(p) {
     const attrs = href ? ` href="${href}" target="_blank" rel="noopener noreferrer"` : ""
     const [h,s] = p.hue || [210,60]
     const art = p.thumb ? `<img class="thumb-art" src="${escapeHTML(p.thumb)}" alt="${escapeHTML(p.name)} 썸네일" loading="lazy" width="800" height="600">` : `<div class="thumb-art thumb-art-demo" style="background:linear-gradient(135deg,hsl(${h} ${s}% 58%),hsl(${h + 25} ${s}% 42%))"><div class="demo-browser" aria-hidden="true"><div class="demo-browser-bar"><i></i><i></i><i></i></div><div class="demo-browser-body"><strong></strong><em></em></div></div><span class="demo-caption">${escapeHTML(p.industry)} · WEB EXPERIENCE</span></div>`
-    return `<${tag} class="card"${attrs}><div class="thumb">${art}${p.thumb ? "" : '<span class="sample">샘플</span>'}<div class="overlay"><strong>${escapeHTML(p.name)}</strong><span>View Project</span></div></div><div class="card-info"><h3 class="card-title">${escapeHTML(p.name)}</h3><p class="card-role">${escapeHTML(p.role)}</p><p class="card-meta">${escapeHTML(p.industry)} · ${escapeHTML(p.year)} · ${p.tech.map(escapeHTML).join(" / ")}</p></div></${tag}>`
+    const meta = [p.industry, p.year, ...(Array.isArray(p.tech) ? p.tech : [])]
+        .filter(value => value !== null && value !== undefined && String(value).trim() !== '')
+        .map(escapeHTML)
+    const role = p.role ? `<p class="card-role">${escapeHTML(p.role)}</p>` : ''
+    const details = meta.length ? `<p class="card-meta">${meta.join(' · ')}</p>` : ''
+    return `<${tag} class="card"${attrs}><div class="thumb">${art}${p.thumb ? "" : '<span class="sample">샘플</span>'}<div class="overlay"><strong>${escapeHTML(p.name)}</strong><span>View Project</span></div></div><div class="card-info"><h3 class="card-title">${escapeHTML(p.name)}</h3>${role}${details}</div></${tag}>`
 }
 
 function render(animate) {
