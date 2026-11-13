@@ -41,7 +41,7 @@ button {font:inherit;cursor:pointer;border:0}
 .grid {display:grid;grid-template-columns:repeat(3,1fr);gap:48px 24px}
 .card {display:block;min-width:0;opacity:0;transform:translateY(24px);transition:opacity .5s,transform .5s}
 .card.in {opacity:1;transform:none}
-.thumb {position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--surface);isolation:isolate}
+.thumb {position:relative;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:var(--surface);isolation:isolate}
 .thumb-art-demo {align-items:stretch;justify-content:center;flex-direction:column;gap:12px;padding:9%;color:#fff}
 .demo-browser {width:100%;height:73%;border-radius:9px;background:rgba(255,255,255,.93);box-shadow:0 20px 36px rgba(0,0,0,.12);overflow:hidden;display:flex;flex-direction:column}
 .demo-browser-bar {height:14%;min-height:12px;background:#f4f6fb;border-bottom:1px solid #e8edf4;display:flex;align-items:center;gap:4px;padding:0 10px}
@@ -50,18 +50,19 @@ button {font:inherit;cursor:pointer;border:0}
 .demo-browser-body strong {flex:1.2;height:63%;display:block;border-radius:8px;background:rgba(49,130,246,.17)}
 .demo-browser-body em {flex:1;height:80%;display:block;border-radius:8px;background:rgba(49,130,246,.4)}
 .demo-caption {font-size:clamp(12px,1.5vw,19px);font-weight:700;letter-spacing:-.02em}
-.card:not([href]) .overlay {display:none}
+
 .card:not([href]) {cursor:default}
 .thumb-art {position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .card[href]:hover .thumb-art,.card[href]:focus-visible .thumb-art {transform:scale(1.06)}
-.overlay {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(25,31,40,.55);color:#fff;opacity:0;transition:opacity .3s}
-.overlay strong {font-size:20px}
-.overlay span {font-size:14px;padding:8px 18px;border-radius:999px;background:var(--blue)}
+.overlay {position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:16px;padding:clamp(18px,2.2vw,34px);background:rgba(16,23,38,.78);color:#fff;opacity:0;transition:opacity .3s ease;pointer-events:none}
+.overlay-title {margin:0;font-size:clamp(18px,2vw,28px);font-weight:700;line-height:1.35;word-break:keep-all}
+.overlay-tags {display:flex;flex-wrap:wrap;gap:7px}
+.overlay-tag {display:inline-flex;align-items:center;min-height:29px;padding:6px 11px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:500;line-height:1.3;backdrop-filter:blur(4px)}
 .card[href]:hover .overlay,.card[href]:focus-visible .overlay {opacity:1}
-.card-info {padding:18px 4px 0}
-.card-title {margin:0;font-size:20px;font-weight:600;color:var(--head)}
-.card-role {margin:2px 0 0;font-size:15px;color:var(--body)}
-.card-meta {margin:6px 0 0;font-size:13px;color:var(--sub)}
+
+
+
+
 .sample {position:absolute;top:14px;left:14px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.9);color:#191f28;font-size:12px;font-weight:600}
 .more-wrap {text-align:center;margin-top:72px;min-height:56px}
 .more {padding:17px 48px;border-radius:999px;background:var(--blue);color:#fff;font-size:17px;font-weight:600;transition:background .2s}
@@ -150,9 +151,9 @@ button {font:inherit;cursor:pointer;border:0}
 .hero-finish p {margin:0;color:#6b7685;font-size:clamp(12px,1.2vw,16px)}
 .finish-link {margin-top:8px;border-radius:100px;background:#3182f6;color:#fff;padding:9px 17px;font-size:12px;font-weight:700;pointer-events:auto}
 .portfolio {background:#1a1a1c;color:#b0b8c1}
-.portfolio .section-title,.portfolio .card-title {color:#fff}
-.portfolio .section-desc,.portfolio .card-role {color:#b0b8c1}
-.portfolio .card-meta,.portfolio .tab-desc {color:#949ba6}
+.portfolio .section-title {color:#fff}
+.portfolio .section-desc {color:#b0b8c1}
+.portfolio .tab-desc {color:#949ba6}
 .portfolio .tabs {background:#303034}
 .portfolio .tab {color:#d8dce3}
 .portfolio .tab[aria-selected="true"] {color:#fff}
@@ -170,10 +171,6 @@ button {font:inherit;cursor:pointer;border:0}
     .hero-visual {width:min(390px,94vw);top:51%}
     .hero-step {bottom:13vh}
     .grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 12px}
-    .card-title {font-size:14px}
-    .card-role {font-size:12px;line-height:1.45}
-    .card-meta {font-size:11px}
-    .card-info {padding:11px 2px 0}
     .thumb {border-radius:12px}
     .intro {padding-top:90px}
     .portfolio {padding-bottom:104px}
@@ -319,3 +316,19 @@ html[data-theme="dark"] .portfolio {background:#1a1a1c}
 .project-cover {object-fit:cover;width:100%;height:100%;padding:0}
 
 .thumb img.thumb-art {width:100%;height:100%;padding:0;object-fit:cover;object-position:center}
+
+/* Hover overlay: keyboard and touch support */
+.card[href]:focus-visible {outline:3px solid #3182f6;outline-offset:4px;border-radius:22px}
+@media (hover:none) {
+    .card[href] .overlay {opacity:1;background:linear-gradient(180deg,transparent 18%,rgba(12,19,32,.8) 100%)}
+    .overlay {gap:8px;padding:12px}
+    .overlay-title {font-size:clamp(13px,3vw,20px)}
+    .overlay-tags {gap:4px}
+    .overlay-tag {min-height:23px;padding:4px 7px;font-size:10px}
+    .card[href]:hover .thumb-art {transform:none}
+}
+@media (prefers-reduced-motion:reduce) {
+    .overlay,.card[href] .thumb-art {transition:none}
+}
+
+.thumb img.thumb-art {object-position:center}

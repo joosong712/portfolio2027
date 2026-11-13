@@ -57,16 +57,18 @@ function escapeHTML(v) {return String(v).replace(/[&<>"']/g,c => ({'&':'&amp;','
 function safeURL(v) {if (!v) return null;try {const u = new URL(v,location.href);return ['https:','http:'].includes(u.protocol) || (!/^[a-z]+:/i.test(v) && !v.startsWith('//')) ? escapeHTML(v) : null}catch {return null}}
 function cardHTML(p) {
     const href = safeURL(p.detail || p.url)
-    const tag = href ? "a" : "div"
-    const attrs = href ? ` href="${href}"` : ""
+    const tag = href ? 'a' : 'div'
+    const attrs = href ? ` href="${href}"` : ''
     const [h,s] = p.hue || [210,60]
-    const art = p.thumb ? `<img class="thumb-art" src="${escapeHTML(p.thumb)}" alt="${escapeHTML(p.name)} 썸네일" loading="lazy" width="800" height="600">` : `<div class="thumb-art thumb-art-demo" style="background:linear-gradient(135deg,hsl(${h} ${s}% 58%),hsl(${h + 25} ${s}% 42%))"><div class="demo-browser" aria-hidden="true"><div class="demo-browser-bar"><i></i><i></i><i></i></div><div class="demo-browser-body"><strong></strong><em></em></div></div><span class="demo-caption">${escapeHTML(p.industry)} · WEB EXPERIENCE</span></div>`
-    const meta = [p.industry, p.year, ...(Array.isArray(p.tech) ? p.tech : [])]
+    const art = p.thumb
+        ? `<img class="thumb-art" src="${escapeHTML(p.thumb)}" alt="" loading="lazy" width="1200" height="1200">`
+        : `<div class="thumb-art thumb-art-demo" style="background:linear-gradient(135deg,hsl(${h} ${s}% 58%),hsl(${h + 25} ${s}% 42%))"><div class="demo-browser" aria-hidden="true"><div class="demo-browser-bar"><i></i><i></i><i></i></div><div class="demo-browser-body"><strong></strong><em></em></div></div><span class="demo-caption">${escapeHTML(p.industry || '')} · WEB EXPERIENCE</span></div>`
+    const workTags = (Array.isArray(p.tech) ? p.tech : [])
         .filter(value => value !== null && value !== undefined && String(value).trim() !== '')
-        .map(escapeHTML)
-    const role = p.role ? `<p class="card-role">${escapeHTML(p.role)}</p>` : ''
-    const details = meta.length ? `<p class="card-meta">${meta.join(' · ')}</p>` : ''
-    return `<${tag} class="card"${attrs}><div class="thumb">${art}${p.thumb ? "" : '<span class="sample">샘플</span>'}<div class="overlay"><strong>${escapeHTML(p.name)}</strong><span>View Project</span></div></div><div class="card-info"><h3 class="card-title">${escapeHTML(p.name)}</h3>${role}${details}</div></${tag}>`
+        .map(value => `<span class="overlay-tag">${escapeHTML(value)}</span>`)
+        .join('')
+    const overlay = `<div class="overlay"><h3 class="overlay-title">${escapeHTML(p.name)}</h3>${workTags ? `<div class="overlay-tags">${workTags}</div>` : ''}</div>`
+    return `<${tag} class="card"${attrs}${href ? ` aria-label="${escapeHTML(p.name)} 프로젝트 상세 보기"` : ''}><div class="thumb">${art}${p.thumb ? '' : '<span class="sample">샘플</span>'}${overlay}</div></${tag}>`
 }
 
 function render(animate) {
