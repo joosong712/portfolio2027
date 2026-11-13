@@ -9,6 +9,42 @@ let aiDebounceTimer
 
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[char]))
 const read = id => $(id).value.trim()
+const ROLE_ORDER = ['Planning', 'Design', 'Publishing', 'Maintenance']
+const roleInputs = [...document.querySelectorAll('#role-options input[name="role"]')]
+const normalizeRole = value => {
+    const raw = String(value || '').trim()
+    if (!raw) return []
+    const values = raw.split(/\s*(?:[·,|/&+]|\band\b)\s*/i).filter(Boolean)
+    const selected = new Set()
+    for (const part of values) {
+        const token = part.toLowerCase().replace(/\s+/g, '')
+        if (/^(planning|기획|웹기획|사이트기획)$/.test(token)) selected.add('Planning')
+        else if (/^(design|webdesign|웹디자인|디자인|웹디자이너)$/.test(token)) selected.add('Design')
+        else if (/^(publishing|webpublishing|퍼블리싱|웹퍼블리싱|웹퍼블리셔|퍼블리셔)$/.test(token)) selected.add('Publishing')
+        else if (/^(maintenance|유지보수|운영|사이트운영|웹사이트유지보수)$/.test(token)) selected.add('Maintenance')
+    }
+    return ROLE_ORDER.filter(role => selected.has(role))
+}
+function getRole() {
+    return ROLE_ORDER.filter(role => roleInputs.some(input => input.value === role && input.checked)).join(' · ')
+}
+function setRole(value) {
+    const selected = normalizeRole(value)
+    roleInputs.forEach(input => {input.checked = selected.includes(input.value)})
+    const raw = String(value || '').trim()
+    const parts = raw.split(/\s*(?:[·,|/&+]|\band\b)\s*/i).filter(Boolean)
+    const note = $('role-legacy')
+    note.hidden = !raw || selected.length >= parts.length
+    note.textContent = note.hidden ? '' : `이전 담당 업무: ${raw} — 일부 항목은 자동 변환하지 못했습니다. 저장 전 선택을 확인해 주세요.`
+    updateRolePreview()
+}
+function updateRolePreview() {
+    $('role-preview').textContent = getRole() || '담당 업무를 선택해 주세요.'
+}
+roleInputs.forEach(input => input.addEventListener('change', () => {
+    $('role-legacy').hidden = true
+    updateRolePreview()
+}))
 
 async function api(url, options = {}) {
     const response = await fetch(url, {...options, headers:{...(options.headers || {}), Accept:'application/json'}})
@@ -31,6 +67,7 @@ function clearForm() {
     clearTimeout(aiDebounceTimer)
     form.reset()
     setTech([])
+    setRole('')
     $('ai-feedback').textContent = ''
     $('project-id').value = ''
     $('image-key').value = ''
@@ -50,9 +87,10 @@ function editProject(id) {
     $('image-key').value = project.image_key || ''
     $('detail-image-key').value = project.detail_image_key || ''
 
-    for (const field of ['name', 'category', 'industry', 'role', 'year', 'slug', 'summary', 'url']) {
+    for (const field of ['name', 'category', 'industry', 'year', 'slug', 'summary', 'url']) {
         $(field).value = project[field] ?? ''
     }
+    setRole(project.role || '')
     $('sort-order').value = project.sort_order ?? 0
     setTech(project.tech || [])
     $('published').checked = Boolean(project.published)
@@ -148,9 +186,10 @@ form.addEventListener('submit', async event => {
         // 기존 이미지는 보존하고, 새 파일을 선택한 경우에만 교체합니다.
         const thumbnailKey = await uploadImage($('file').files?.[0], 'thumbnail') || read('image-key')
         const detailKey = await uploadImage($('detail-file').files?.[0], 'detail') || read('detail-image-key')
+        if (!getRole()) throw new Error('담당 업무를 하나 이상 선택해 주세요.')
         const body = {
             name:read('name'), category:read('category'), slug:read('slug'),
-            industry:read('industry'), role:read('role'), year:read('year'),
+            industry:read('industry'), role:getRole(), year:read('year'),
             summary:read('summary'), url:read('url'),
             sort_order:Number(read('sort-order') || 0),
             tech:getTech(),
@@ -231,7 +270,7 @@ async function generateSummary() {
         const payload = new FormData()
         payload.append('name', name)
         payload.append('industry', read('industry'))
-        payload.append('role', read('role'))
+        payload.append('role', getRole())
         payload.append('work_tags', getTech().join(', '))
         if (file) payload.append('image', await analysisImage(file), 'analysis.jpg')
         const result = await api('/api/admin/generate-summary', {method:'POST', body:payload})

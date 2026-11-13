@@ -52,8 +52,17 @@
                             <input id="sort-order" max="100000" min="-100000" type="number" value="0">
                         </div>
                     </div>
-                    <label for="role">담당 업무</label>
-                    <input id="role" maxlength="180" placeholder="웹디자인 · 퍼블리싱">
+                    <div class="role-field">
+                        <label id="role-label">담당 업무 * <small>(복수 선택 가능)</small></label>
+                        <div id="role-options" class="role-options" role="group" aria-labelledby="role-label">
+                            <label class="role-option"><input type="checkbox" name="role" value="Planning"><span>기획 <small>Planning</small></span></label>
+                            <label class="role-option"><input type="checkbox" name="role" value="Design"><span>웹디자인 <small>Design</small></span></label>
+                            <label class="role-option"><input type="checkbox" name="role" value="Publishing"><span>웹퍼블리싱 <small>Publishing</small></span></label>
+                            <label class="role-option"><input type="checkbox" name="role" value="Maintenance"><span>유지보수 <small>Maintenance</small></span></label>
+                        </div>
+                        <p class="role-preview" id="role-preview">담당 업무를 선택해 주세요.</p>
+                        <p class="help" id="role-legacy" hidden></p>
+                    </div>
                     <label id="tech-label">작업 분야 태그 (여러 개 선택 가능)</label>
                     <div id="tech-options" class="tag-options" role="group" aria-labelledby="tech-label">
                         <button class="tag-option" type="button" data-tech="홈페이지 제작" aria-pressed="false">홈페이지 제작</button>

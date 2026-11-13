@@ -7,8 +7,26 @@ export function escapeHtml(input='') {
 export function publicOrigin(env, request) {
   try {return new URL(env.SITE_URL||request.url).origin} catch {return new URL(request.url).origin}
 }
+const ROLE_NAMES = ['Planning', 'Design', 'Publishing', 'Maintenance']
+export function normalizeRole(value) {
+  const raw=String(value||'').trim()
+  if(!raw)return ''
+  const parts=raw.split(/\s*(?:[·,|/&+]|\band\b)\s*/i).filter(Boolean)
+  const found=new Set()
+  let unknown=false
+  for(const part of parts){
+    const token=part.toLowerCase().replace(/\s+/g,'')
+    if(/^(planning|기획|웹기획|사이트기획)$/.test(token))found.add('Planning')
+    else if(/^(design|webdesign|웹디자인|디자인|웹디자이너)$/.test(token))found.add('Design')
+    else if(/^(publishing|webpublishing|퍼블리싱|웹퍼블리싱|웹퍼블리셔|퍼블리셔)$/.test(token))found.add('Publishing')
+    else if(/^(maintenance|유지보수|운영|사이트운영|웹사이트유지보수)$/.test(token))found.add('Maintenance')
+    else unknown=true
+  }
+  // 알 수 없는 이전 업무명은 임의로 삭제하지 않습니다.
+  return unknown ? raw : ROLE_NAMES.filter(role=>found.has(role)).join(' · ')
+}
 export function projectRecord(row, origin, admin=false) {
-  const p={id:row.id,slug:row.slug,name:row.title,category:row.category,industry:row.industry||'',role:row.role||'',year:row.year||null,tech:JSON.parse(row.tech_json||'[]'),summary:row.summary||'',url:row.site_url||null,image_url:row.image_key?`${origin}/media/${row.image_key}`:null,detail_image_url:(row.detail_image_key||row.image_key)?`${origin}/media/${row.detail_image_key||row.image_key}`:null,sort_order:row.sort_order||0}
+  const p={id:row.id,slug:row.slug,name:row.title,category:row.category,industry:row.industry||'',role:normalizeRole(row.role),year:row.year||null,tech:JSON.parse(row.tech_json||'[]'),summary:row.summary||'',url:row.site_url||null,image_url:row.image_key?`${origin}/media/${row.image_key}`:null,detail_image_url:(row.detail_image_key||row.image_key)?`${origin}/media/${row.detail_image_key||row.image_key}`:null,sort_order:row.sort_order||0}
   if(admin) {p.published=!!row.published;p.image_key=row.image_key||null;p.detail_image_key=row.detail_image_key||null}
   return p
 }
@@ -44,7 +62,8 @@ export function cleanProject(input){
   const title=String(input.name||'').trim(), category=input.category
   if(title.length<1||title.length>120)throw Error('프로젝트명은 1~120자로 입력하세요.')
   if(!['custom','template'].includes(category))throw Error('카테고리를 확인하세요.')
-  const industry=String(input.industry||'').trim(),role=String(input.role||'').trim(),summary=String(input.summary||'').trim()
+  const industry=String(input.industry||'').trim(),role=normalizeRole(input.role),summary=String(input.summary||'').trim()
+  if(!role || role.split(' · ').some(part=>!ROLE_NAMES.includes(part)))throw Error('담당 업무를 체크박스에서 선택하세요.')
   if(industry.length>100||role.length>180||summary.length>2000)throw Error('입력 가능한 글자 수를 초과했습니다.')
   const year=input.year==null||input.year===''?null:Number(input.year)
   if(year!==null && (!Number.isInteger(year)||year<1990||year>2100))throw Error('제작 연도를 확인하세요.')

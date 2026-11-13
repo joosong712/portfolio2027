@@ -1,4 +1,4 @@
-import {escapeHtml, publicOrigin} from '../_shared.js'
+import {escapeHtml, publicOrigin, normalizeRole} from '../_shared.js'
 
 export async function onRequestGet({params, request, env}) {
     const slug = params.slug
@@ -25,7 +25,7 @@ export async function onRequestGet({params, request, env}) {
     const meta = [
         project.industry ? `<span><b>INDUSTRY</b> ${escapeHtml(project.industry)}</span>` : '',
         project.year ? `<span><b>YEAR</b> ${project.year}</span>` : '',
-        project.role ? `<span><b>ROLE</b> ${escapeHtml(project.role)}</span>` : ''
+        project.role ? `<span><b>ROLE</b> ${escapeHtml(normalizeRole(project.role))}</span>` : ''
     ].filter(Boolean).join('')
     const jsonld = JSON.stringify({
         '@context':'https://schema.org', '@type':'CreativeWork', name:project.title,

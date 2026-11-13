@@ -46,3 +46,16 @@ footer {padding:20px;text-align:center;color:#8b95a1;font-size:12px}
 .ai-note {font-size:12px;color:#788597}
 .ai-feedback {margin:7px 0;font-size:12px;color:#3269b9;white-space:pre-line}
 button:disabled {cursor:wait;opacity:.6}
+
+/* 담당 업무: 고정 선택형 */
+.role-field {margin:14px 0 16px}
+.role-field > label {display:block}
+.role-field small {font-size:12px;color:#8993a5;font-weight:400}
+.role-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:9px}
+.role-option {display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d9e0e9;border-radius:10px;cursor:pointer;margin:0;background:#fff}
+.role-option:has(input:checked) {border-color:#3182f6;background:#eff6ff}
+.role-option input {width:17px;height:17px;flex:none;accent-color:#3182f6;margin:0}
+.role-option span {font-weight:600;font-size:13px}
+.role-option span small {display:block;margin-top:2px}
+.role-preview {margin:9px 0 2px;color:#3269b9;font-size:13px;font-weight:600;min-height:18px}
+@media(max-width:520px) {.role-options {grid-template-columns:1fr}}
