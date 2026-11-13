@@ -1,0 +1,10 @@
+/admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
+
+/api/admin/*
+  Cache-Control: no-store
+
+/media/*
+  X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=86400
