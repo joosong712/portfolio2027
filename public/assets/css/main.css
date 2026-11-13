@@ -85,7 +85,17 @@ button {font:inherit;cursor:pointer;border:0}
 .contact .inner {max-width:1100px}
 .footer {padding:36px 0;border-top:1px solid var(--line);font-size:14px;color:var(--sub)}
 .footer .inner {display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-.top {padding:10px 20px;border-radius:999px;background:var(--surface);color:var(--body);font-size:14px;font-weight:500}
+/* PC floating back-to-top */
+.top {position:fixed;right:clamp(20px,3vw,56px);bottom:clamp(24px,3vw,48px);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:58px;height:58px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--head);box-shadow:0 8px 28px rgba(0,0,0,.14);font-family:Outfit,Pretendard,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:transform .2s,background .2s,box-shadow .2s}
+.top i {font-size:20px;line-height:1}
+.top:hover {background:var(--blue);color:#fff;transform:translateY(-3px);box-shadow:0 12px 32px rgba(49,130,246,.25)}
+.top:focus-visible {outline:3px solid var(--blue);outline-offset:3px}
+@media (max-width:768px) {
+    .top {display:none}
+}
+@media (prefers-reduced-motion:reduce) {
+    .top {transition:none}
+}
 .toast {position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);padding:14px 26px;border-radius:999px;background:var(--head);color:var(--bg);font-size:15px;font-weight:500;opacity:0;pointer-events:none;transition:.3s;z-index:10}
 .toast.show {opacity:1;transform:translate(-50%,0)}
 @media (max-width:1280px) {
@@ -332,3 +342,22 @@ html[data-theme="dark"] .portfolio {background:#1a1a1c}
 }
 
 .thumb img.thumb-art {object-position:center}
+
+/* Contact content sizing: compact responsive typography */
+.contact-list {gap:16px;margin-bottom:44px}
+.contact-item {min-width:0;padding:27px 28px}
+.contact-item dt {font-size:12px;line-height:1.5}
+.contact-item dd {font-size:clamp(15px,1.2vw,17px);line-height:1.55;overflow-wrap:anywhere}
+.contact .btn {font-size:15px;padding:15px 32px}
+@media (max-width:768px) {
+    .contact-list {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:32px}
+    .contact-item {padding:23px 22px;border-radius:18px}
+    .contact-item dd {font-size:14px}
+    .contact .btn {font-size:14px;padding:14px 28px}
+}
+@media (max-width:580px) {
+    .contact-list {grid-template-columns:1fr;gap:10px;margin-bottom:28px}
+    .contact-item {padding:18px 20px}
+    .contact-item dd {font-size:14px}
+    .contact .btn {width:100%;font-size:13px;padding:14px 20px}
+}

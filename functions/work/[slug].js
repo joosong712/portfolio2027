@@ -55,6 +55,7 @@ export async function onRequestGet({params, request, env}) {
         <script type="application/ld+json">${jsonld}</script>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
         <link rel="stylesheet" href="/assets/css/work.css">
         <script src="/assets/js/work.js" defer></script>
     </head>
@@ -80,8 +81,11 @@ export async function onRequestGet({params, request, env}) {
                 </div>
             </section>
             ${detailKey ? `<figure class="work-capture"><img src="${image}" alt="${title} 웹사이트 전체 디자인" width="1100" loading="lazy"></figure>` : ''}
+            <nav class="work-project-nav" aria-label="프로젝트 목록 이동">
+                <a class="work-project-list" href="/#portfolio"><i class="ri-layout-grid-line" aria-hidden="true"></i><span>모든 프로젝트 보기</span></a>
+            </nav>
         </main>
-        <footer class="work-wrap work-footer"><span>© JOO SONG PORTFOLIO</span><a href="/#portfolio">모든 프로젝트 보기 ↗</a></footer>
+        <footer class="work-wrap work-footer"><span>© JOO SONG PORTFOLIO</span></footer>
     </body>
 </html>`
 

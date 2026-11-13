@@ -25,8 +25,11 @@ button {font:inherit}
 .work-tags {display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}
 .work-tags span {padding:7px 12px;border-radius:999px;background:#f1f4f8;color:#596575;font-size:13px}
 .work-button {display:inline-block;background:#3182f6;color:white;padding:13px 25px;margin-top:35px;border-radius:12px;font-size:14px;font-weight:700}
-.work-footer {display:flex;justify-content:space-between;gap:16px;padding:40px 0 70px;font-size:14px;color:#687386}
-.work-footer a {color:#3182f6;font-weight:700}
+.work-project-nav {display:flex;justify-content:center;margin:0;padding:80px 0 100px;text-align:center}
+.work-project-list {display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:14px 32px;border:1px solid #d9e0e9;border-radius:999px;background:#fff;color:#191f28;font-size:15px;font-weight:700;transition:background .2s,border-color .2s,transform .2s}
+.work-project-list:hover {background:#edf5ff;border-color:#3182f6;transform:translateY(-2px)}
+.work-project-list:focus-visible {outline:3px solid #3182f6;outline-offset:3px}
+.work-footer {padding:28px 0 48px;border-top:1px solid #e9edf2;text-align:center;font-size:13px;color:#687386}
 @media (max-width:768px) {
     .work-wrap {width:calc(100% - 32px)}
     .work-hero {padding:58px 0 38px}
@@ -35,5 +38,21 @@ button {font:inherit}
     .work-capture {border-radius:12px}
     .work-description {padding:44px 0 70px;grid-template-columns:1fr;gap:20px}
     .work-summary {font-size:16px;white-space:normal}
-    .work-footer {padding:32px 0 50px}
+    .work-project-nav {padding:48px 0 64px}
+    .work-project-list {min-height:48px;padding:12px 26px;font-size:14px}
+    .work-footer {padding:24px 0 36px}
+}
+
+@media (prefers-reduced-motion:reduce) {
+    .work-project-list {transition:none}
+}
+
+/* Project list CTA: Remix icon and responsive sizing */
+.work-project-list i {font-size:19px;line-height:1}
+@media (max-width:768px) {
+    .work-project-list {font-size:13px;min-height:46px;padding:11px 22px}
+    .work-project-list i {font-size:17px}
+}
+@media (max-width:390px) {
+    .work-project-list {font-size:12px;padding:10px 20px}
 }
