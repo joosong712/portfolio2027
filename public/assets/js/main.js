@@ -122,10 +122,6 @@ CONTACT_LINKS.forEach(({label,url}) => {
 })
 if (!items.length) items.push('<div class="contact-item"><dt>Contact</dt><dd>연락처 등록 예정</dd><small>assets/js/contact.js 파일에서 연락처를 입력해 주세요.</small></div>')
 list.innerHTML = items.join("")
-const cta = []
-if (CONTACT.email) cta.push(`<a class="btn btn-primary" href="mailto:${escapeHTML(CONTACT.email)}">이메일 보내기 ↗</a>`)
-if (safeURL(CONTACT.resume)) cta.push(`<a class="btn btn-ghost" href="${safeURL(CONTACT.resume)}" target="_blank" rel="noopener noreferrer">이력서 보기 ↗</a>`)
-document.getElementById("cta").innerHTML = cta.join("")
 const toast = document.getElementById("toast")
 function notify(msg) {toast.textContent = msg;toast.classList.add("show");clearTimeout(notify.t);notify.t = setTimeout(() => toast.classList.remove("show"),2200)}
 const copyMail = document.getElementById("copyMail")

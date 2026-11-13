@@ -56,3 +56,36 @@ button {font:inherit}
 @media (max-width:390px) {
     .work-project-list {font-size:12px;padding:10px 20px}
 }
+
+/* Responsive typography — project detail */
+.work-title {font-size:clamp(34px,4.6vw,62px)}
+.work-summary {font-size:clamp(16px,1.25vw,18px);line-height:1.85}
+@media (max-width:1024px) {
+    .work-title {font-size:clamp(32px,5vw,50px)}
+    .work-summary {font-size:16px}
+}
+@media (max-width:768px) {
+    .work-title {font-size:clamp(28px,6vw,40px)}
+    .work-meta {font-size:12px;gap:10px 18px}
+    .work-description h2 {font-size:16px}
+    .work-summary {font-size:15px;line-height:1.8}
+    .work-tags span {font-size:12px}
+    .work-button {font-size:13px}
+}
+@media (max-width:580px) {
+    .work-brand {font-size:14px}
+    .work-back {font-size:12px}
+    .work-kicker {font-size:12px}
+    .work-title {font-size:clamp(26px,7vw,34px)}
+    .work-meta {font-size:11px}
+    .work-description h2 {font-size:15px}
+    .work-summary {font-size:14px;line-height:1.75}
+    .work-tags span {font-size:11px}
+    .work-button {font-size:12px}
+    .work-project-list {font-size:12px}
+    .work-footer {font-size:11px}
+}
+@media (max-width:390px) {
+    .work-title {font-size:26px}
+    .work-summary {font-size:13px}
+}

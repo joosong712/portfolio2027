@@ -86,8 +86,8 @@ button {font:inherit;cursor:pointer;border:0}
 .footer {padding:36px 0;border-top:1px solid var(--line);font-size:14px;color:var(--sub)}
 .footer .inner {display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 /* PC floating back-to-top */
-.top {position:fixed;right:clamp(20px,3vw,56px);bottom:clamp(24px,3vw,48px);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:58px;height:58px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--head);box-shadow:0 8px 28px rgba(0,0,0,.14);font-family:Outfit,Pretendard,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:transform .2s,background .2s,box-shadow .2s}
-.top i {font-size:20px;line-height:1}
+.top {position:fixed;right:clamp(20px,3vw,56px);bottom:clamp(24px,3vw,48px);z-index:80;display:flex;align-items:center;justify-content:center;width:54px;height:54px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--head);box-shadow:0 8px 28px rgba(0,0,0,.14);font-family:Outfit,Pretendard,sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:transform .2s,background .2s,box-shadow .2s}
+.top i {font-size:23px;line-height:1}
 .top:hover {background:var(--blue);color:#fff;transform:translateY(-3px);box-shadow:0 12px 32px rgba(49,130,246,.25)}
 .top:focus-visible {outline:3px solid var(--blue);outline-offset:3px}
 @media (max-width:768px) {
@@ -343,21 +343,71 @@ html[data-theme="dark"] .portfolio {background:#1a1a1c}
 
 .thumb img.thumb-art {object-position:center}
 
-/* Contact content sizing: compact responsive typography */
-.contact-list {gap:16px;margin-bottom:44px}
-.contact-item {min-width:0;padding:27px 28px}
+/* Typography and spacing — common responsive scale */
+.section-title {font-size:clamp(36px,4.2vw,60px)}
+.section-title--large {font-size:clamp(42px,6.2vw,88px)}
+.section-desc {font-size:clamp(15px,1.18vw,18px);line-height:1.8}
+.section-kicker {font-size:14px}
+.tab {font-size:16px}
+.tab-desc {font-size:14px}
+.more {font-size:16px}
+.overlay-title {font-size:clamp(18px,2vw,26px)}
+.overlay-tag {font-size:11px}
+.contact-list {gap:16px;margin-bottom:0}
+.contact-item {min-width:0;padding:26px 28px}
 .contact-item dt {font-size:12px;line-height:1.5}
-.contact-item dd {font-size:clamp(15px,1.2vw,17px);line-height:1.55;overflow-wrap:anywhere}
-.contact .btn {font-size:15px;padding:15px 32px}
+.contact-item dd {font-size:clamp(15px,1.15vw,17px);line-height:1.55;overflow-wrap:anywhere}
+.contact .inner {max-width:1100px}
+.copy {font-size:12px}
+.footer {font-size:13px}
+@media (max-width:1024px) {
+    .section-title {font-size:clamp(34px,4.5vw,48px)}
+    .section-title--large {font-size:clamp(42px,7vw,68px)}
+    .section-desc {font-size:16px}
+    .hero-heading h1 {font-size:clamp(34px,5.2vw,56px)}
+    .hero-finish strong {font-size:clamp(38px,5.4vw,58px)}
+    .contact-list {grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+}
 @media (max-width:768px) {
-    .contact-list {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:32px}
-    .contact-item {padding:23px 22px;border-radius:18px}
+    body {font-size:15px}
+    .section-kicker {font-size:12px}
+    .section-title {margin-bottom:22px;font-size:clamp(30px,5.4vw,42px)}
+    .section-title--large {font-size:clamp(36px,7vw,52px)}
+    .section-desc {font-size:15px;line-height:1.75;white-space:normal}
+    .section-heading--contact .section-desc {margin-bottom:32px}
+    .tab {padding:12px 25px;font-size:14px}
+    .tab-desc {font-size:13px}
+    .more {padding:14px 34px;font-size:14px}
+    .overlay-title {font-size:clamp(16px,2.6vw,21px)}
+    .overlay-tag {font-size:10px}
+    .contact-item {padding:22px;border-radius:18px}
     .contact-item dd {font-size:14px}
-    .contact .btn {font-size:14px;padding:14px 28px}
+    .footer {font-size:12px}
 }
 @media (max-width:580px) {
-    .contact-list {grid-template-columns:1fr;gap:10px;margin-bottom:28px}
-    .contact-item {padding:18px 20px}
+    body {font-size:14px}
+    .section-title {font-size:clamp(27px,7.2vw,34px)}
+    .section-title--large {font-size:clamp(34px,9vw,42px)}
+    .section-desc {font-size:14px;line-height:1.7}
+    .section-kicker {font-size:11px}
+    .marquee-group span {font-size:clamp(36px,10vw,52px)}
+    .tabs {margin-bottom:40px}
+    .tab {padding:11px 21px;font-size:13px}
+    .tab-desc {margin:-18px auto 30px;font-size:12px}
+    .more {padding:13px 28px;font-size:13px}
+    .overlay-title {font-size:clamp(13px,3.6vw,17px)}
+    .overlay-tag {font-size:10px}
+    .contact-list {grid-template-columns:1fr;gap:10px}
+    .contact-item {padding:19px 20px}
     .contact-item dd {font-size:14px}
-    .contact .btn {width:100%;font-size:13px;padding:14px 20px}
+    .copy {font-size:11px}
+    .footer {font-size:11px}
+}
+@media (max-width:390px) {
+    .section-title {font-size:27px}
+    .section-title--large {font-size:33px}
+    .tab {padding:10px 19px;font-size:12px}
+    .overlay-title {font-size:13px}
+    .overlay-tag {font-size:9px}
+    .contact-item dd {font-size:13px}
 }
