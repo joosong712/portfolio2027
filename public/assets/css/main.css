@@ -52,7 +52,7 @@ button {font:inherit;cursor:pointer;border:0}
 .overlay {position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:16px;padding:clamp(18px,2.2vw,34px);background:rgba(16,23,38,.78);color:#fff;opacity:0;transition:opacity .3s ease;pointer-events:none}
 .overlay-title {margin:0;font-size:clamp(18px,2vw,26px);font-weight:700;line-height:1.35;word-break:keep-all}
 .overlay-tags {display:flex;flex-wrap:wrap;gap:7px}
-.overlay-tag {display:inline-flex;align-items:center;min-height:29px;padding:6px 11px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:500;line-height:1.3;backdrop-filter:blur(4px)}
+.overlay-tag {display:inline-flex;align-items:center;min-height:29px;padding:6px 11px;border:1px solid rgba(255,255,255,.5);border-radius:999px;background:rgba(255,255,255,.1);color:#fff;font-size:14px;font-weight:500;line-height:1.3;backdrop-filter:blur(4px)}
 .card[href]:hover .overlay,.card[href]:focus-visible .overlay {opacity:1}
 .sample {position:absolute;top:14px;left:14px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.9);color:#191f28;font-size:12px;font-weight:600}
 .more-wrap {text-align:center;margin-top:72px;min-height:56px}
