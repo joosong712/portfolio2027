@@ -6,6 +6,9 @@ let projects = []
 let selectedTech = new Set()
 let aiRequestNumber = 0
 let aiDebounceTimer
+let keywordSuggestions = []
+let keywordRequestNumber = 0
+let editingImageUrl = ''
 
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[char]))
 const read = id => $(id).value.trim()
@@ -64,11 +67,18 @@ function setPreview(id, url) {
 
 function clearForm() {
     aiRequestNumber++
+    keywordRequestNumber++
     clearTimeout(aiDebounceTimer)
     form.reset()
     setTech([])
     setRole('')
     $('ai-feedback').textContent = ''
+    $('keyword-feedback').textContent = ''
+    keywordSuggestions = []
+    editingImageUrl = ''
+    $('keyword-extra').value = ''
+    $('ai-style').value = 'balanced'
+    renderKeywords()
     $('project-id').value = ''
     $('image-key').value = ''
     $('detail-image-key').value = ''
@@ -91,6 +101,8 @@ function editProject(id) {
         $(field).value = project[field] ?? ''
     }
     setRole(project.role || '')
+    editingImageUrl = project.detail_image_url || project.image_url || ''
+    restoreKeywordDraft(project)
     $('sort-order').value = project.sort_order ?? 0
     setTech(project.tech || [])
     $('published').checked = Boolean(project.published)
@@ -197,11 +209,12 @@ form.addEventListener('submit', async event => {
             published:$('published').checked
         }
         const id = Number($('project-id').value)
-        await api(id ? `/api/admin/projects/${id}` : '/api/admin/projects', {
+        const saved = await api(id ? `/api/admin/projects/${id}` : '/api/admin/projects', {
             method:id ? 'PUT' : 'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify(body)
         })
+        saveKeywordDraft(id || saved.id || 0, body.slug)
         clearForm()
         await loadProjects()
         status.textContent = '프로젝트가 저장되었습니다.'
@@ -265,44 +278,147 @@ async function analysisImages(file) {
         image.close()
     }
 }
-async function generateSummary() {
+// 키워드 초안은 DB 변경 없이 현재 브라우저에만 저장합니다.
+const draftKey = (id, slug) => `portfolio-ai-keywords:${id || slug || 'new'}`
+function saveKeywordDraft(id, slug) {
+    if (!id && !slug) return
+    try {localStorage.setItem(draftKey(id, slug), JSON.stringify({suggestions:keywordSuggestions, extra:read('keyword-extra'), style:read('ai-style')}))} catch {}
+}
+function restoreKeywordDraft(project) {
+    try {
+        const saved = JSON.parse(localStorage.getItem(draftKey(project.id, project.slug)) || 'null')
+        if (!saved) return
+        keywordSuggestions = Array.isArray(saved.suggestions) ? saved.suggestions.filter(isValidKeyword).slice(0, 8) : []
+        $('keyword-extra').value = String(saved.extra || '').slice(0, 400)
+        $('ai-style').value = ['balanced','design','planning'].includes(saved.style) ? saved.style : 'balanced'
+        renderKeywords()
+        $('keyword-feedback').textContent = '이 브라우저에 보관된 키워드를 불러왔습니다. 이미지 재분석도 가능합니다.'
+    } catch {}
+}
+const isValidKeyword = item => item && typeof item.text === 'string' && item.text.length <= 45 && ['visual','concept'].includes(item.type)
+function selectedKeywords() {
+    const selected = keywordSuggestions.filter(item => item.selected).map(item => item.text)
+    const extra = read('keyword-extra').split(',').map(item => item.trim()).filter(Boolean)
+    return [...new Set([...selected, ...extra])].slice(0, 12)
+}
+function renderKeywords() {
+    $('keyword-panel').hidden = keywordSuggestions.length === 0
+    for (const type of ['visual','concept']) {
+        const parent = $(type === 'visual' ? 'visual-keywords' : 'concept-keywords')
+        parent.replaceChildren()
+        const items = keywordSuggestions.filter(item => item.type === type)
+        if (!items.length) {
+            const empty = document.createElement('span')
+            empty.className = 'ai-note'
+            empty.textContent = type === 'visual' ? '확인 가능한 시각적 키워드가 없습니다.' : '제안된 콘셉트 키워드가 없습니다.'
+            parent.append(empty)
+        }
+        for (const item of items) {
+            const button = document.createElement('button')
+            button.type = 'button'
+            button.className = `ai-keyword${item.selected ? ' is-active' : ''}`
+            button.setAttribute('aria-pressed', String(Boolean(item.selected)))
+            button.textContent = `${item.selected ? '✓ ' : '+ '}${item.text}`
+            button.addEventListener('click', () => {
+                item.selected = !item.selected
+                renderKeywords()
+            })
+            parent.append(button)
+        }
+    }
+    const words = selectedKeywords()
+    $('selected-keywords').textContent = words.length ? `선택 ${words.length}개 · ${words.join(' · ')}` : '선택한 키워드 없음'
+}
+$('keyword-extra').addEventListener('input', renderKeywords)
+
+async function currentAnalysisImages() {
     const file = $('detail-file').files?.[0] || $('file').files?.[0]
-    const name = read('name')
+    if (file) return analysisImages(file)
+    if (editingImageUrl) {
+        const url = new URL(editingImageUrl, location.origin)
+        if (url.origin !== location.origin) throw Error('등록된 이미지의 출처를 확인할 수 없습니다. 이미지를 다시 선택해 주세요.')
+        const response = await fetch(url.href)
+        if (!response.ok) throw Error('기존 이미지 불러오기에 실패했습니다. 이미지를 다시 선택해 주세요.')
+        const image = await response.blob()
+        return analysisImages(image)
+    }
+    return []
+}
+async function buildPayload(mode) {
+    const payload = new FormData()
+    payload.append('mode', mode)
+    payload.append('name', read('name'))
+    payload.append('category', read('category'))
+    payload.append('industry', read('industry'))
+    payload.append('role', getRole())
+    payload.append('work_tags', getTech().join(', '))
+    if (mode === 'summary') {
+        payload.append('keywords', JSON.stringify(selectedKeywords()))
+        payload.append('style', read('ai-style'))
+    }
+    const images = await currentAnalysisImages()
+    images.forEach((image, index) => payload.append('image', image, `analysis-${index + 1}.jpg`))
+    return {payload, imageCount:images.length}
+}
+async function analyzeKeywords() {
+    const requestNumber = ++keywordRequestNumber
+    if (!read('name')) {
+        $('keyword-feedback').textContent = '프로젝트명을 입력한 뒤 이미지를 분석해 주세요.'
+        return
+    }
+    $('analyze-keywords').disabled = true
+    $('keyword-feedback').textContent = '이미지에서 컬러·레이아웃·콘텐츠 특징을 분석하고 있습니다...'
+    try {
+        const {payload,imageCount} = await buildPayload('keywords')
+        if (!imageCount) throw Error('분석할 이미지를 선택해 주세요.')
+        const result = await api('/api/admin/generate-summary', {method:'POST',body:payload})
+        if (requestNumber !== keywordRequestNumber) return
+        if (!Array.isArray(result.keywords)) throw Error('추천 키워드를 가져오지 못했습니다.')
+        keywordSuggestions = result.keywords.filter(isValidKeyword).slice(0,8).map(item => ({text:item.text.trim(),type:item.type,selected:true}))
+        renderKeywords()
+        $('keyword-feedback').textContent = keywordSuggestions.length ? '추천 키워드를 확인하고 필요 없는 항목은 제외하세요. 콘셉트 키워드는 직접 검토해 주세요.' : '화면에서 확실하게 추출한 키워드가 없습니다. 직접 입력할 수 있습니다.'
+    } catch (error) {
+        if (requestNumber === keywordRequestNumber) $('keyword-feedback').textContent = `키워드 분석 실패: ${error.message}`
+    } finally {
+        if (requestNumber === keywordRequestNumber) $('analyze-keywords').disabled = false
+    }
+}
+async function generateSummary() {
     const requestNumber = ++aiRequestNumber
-    if (!name) {
+    if (!read('name')) {
         $('ai-feedback').textContent = '프로젝트명을 먼저 입력해 주세요.'
+        return
+    }
+    if (!selectedKeywords().length) {
+        $('ai-feedback').textContent = '추천 키워드를 선택하거나 직접 키워드를 입력해 주세요.'
         return
     }
     const button = $('generate-summary')
     button.disabled = true
-    $('ai-feedback').textContent = '프로젝트 소개 초안을 생성하고 있습니다...'
+    $('ai-feedback').textContent = '선택한 키워드로 소개글을 작성하고 있습니다...'
     try {
-        const payload = new FormData()
-        payload.append('name', name)
-        payload.append('category', read('category'))
-        payload.append('industry', read('industry'))
-        payload.append('role', getRole())
-        payload.append('work_tags', getTech().join(', '))
-        if (file) {
-            const images = await analysisImages(file)
-            images.forEach((image, index) => payload.append('image', image, `analysis-${index + 1}.jpg`))
-        }
-        const result = await api('/api/admin/generate-summary', {method:'POST', body:payload})
+        const {payload} = await buildPayload('summary')
+        const result = await api('/api/admin/generate-summary', {method:'POST',body:payload})
         if (requestNumber !== aiRequestNumber) return
         if ($('summary').value.trim() && !confirm('기존 소개글을 AI 초안으로 교체할까요?')) return
         $('summary').value = result.summary
-        $('ai-feedback').textContent = file ? '화면의 상·중·하단과 작업 정보를 참고한 초안입니다. 실제 기획·구현 내용은 확인해 주세요.' : '입력 정보를 기반으로 생성된 AI 초안입니다. 이미지를 선택하면 디자인 분석이 가능합니다.'
+        $('ai-feedback').textContent = '선택한 키워드를 반영한 초안입니다. 실제 디자인 의도와 구현 사실을 확인한 뒤 저장하세요.'
     } catch (error) {
         if (requestNumber === aiRequestNumber) $('ai-feedback').textContent = `AI 생성 실패: ${error.message}`
     } finally {
         if (requestNumber === aiRequestNumber) button.disabled = false
     }
 }
+$('analyze-keywords').addEventListener('click', analyzeKeywords)
 $('generate-summary').addEventListener('click', generateSummary)
 for (const id of ['file', 'detail-file']) {
     $(id).addEventListener('change', () => {
+        aiRequestNumber++
+        keywordRequestNumber++
+        keywordSuggestions = []
+        renderKeywords()
         clearTimeout(aiDebounceTimer)
         if (!$(id).files?.length) return
-        aiDebounceTimer = setTimeout(generateSummary, 600)
+        aiDebounceTimer = setTimeout(analyzeKeywords, 650)
     })
 }

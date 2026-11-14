@@ -78,13 +78,37 @@
                     </div>
                     <label for="tech-extra">기타 작업 분야 (선택 · 쉼표 구분)</label>
                     <input id="tech-extra" maxlength="300" placeholder="기타 작업 분야를 직접 입력하세요">
-                    <label for="summary">프로젝트 소개</label>
-                    <div class="ai-actions">
-                        <button class="ghost" id="generate-summary" type="button">AI 소개글 다시 생성</button>
-                        <span class="ai-note">이미지 선택 시 화면 상·중·하단을 분석해 초안을 생성합니다. 수정 후 저장하세요.</span>
+                    <div class="ai-writer" aria-labelledby="ai-writer-title">
+                        <h2 id="ai-writer-title">AI 프로젝트 소개글 <span class="ai-step-label">2단계 작성</span></h2>
+                        <p class="help">① 이미지를 분석해 키워드를 추천받고 ② 선택한 키워드로 소개글을 작성합니다.</p>
+                        <div class="ai-actions">
+                            <button class="ghost" id="analyze-keywords" type="button">① 이미지 키워드 분석</button>
+                            <span class="ai-note">신규 이미지 선택 시 자동 분석 · 등록된 이미지도 재분석 가능</span>
+                        </div>
+                        <p class="ai-feedback" id="keyword-feedback" role="status" aria-live="polite"></p>
+                        <div id="keyword-panel" hidden>
+                            <label id="visual-label">이미지에서 확인한 시각적 특징 <small>(선택 / 해제)</small></label>
+                            <div id="visual-keywords" class="ai-keywords" role="group" aria-labelledby="visual-label"></div>
+                            <label id="concept-label">업종·콘셉트 제안 <small>(추정된 방향이므로 직접 확인)</small></label>
+                            <div id="concept-keywords" class="ai-keywords" role="group" aria-labelledby="concept-label"></div>
+                        </div>
+                        <label for="keyword-extra">직접 추가할 키워드 (쉼표 구분)</label>
+                        <input id="keyword-extra" maxlength="400" placeholder="예: 곡선형 레이아웃, 진료 안내 중심, 따뜻한 색감">
+                        <p class="ai-selected" id="selected-keywords" aria-live="polite">선택한 키워드 없음</p>
+                        <label for="ai-style">소개글 작성 방향</label>
+                        <select id="ai-style">
+                            <option value="balanced">기획 의도 + 디자인 특징 (추천)</option>
+                            <option value="design">시각 디자인 중심</option>
+                            <option value="planning">콘텐츠 기획 중심</option>
+                        </select>
+                        <div class="ai-actions">
+                            <button class="primary" id="generate-summary" type="button">② 선택 키워드로 소개글 작성</button>
+                            <span class="ai-note">실제 구현 기능이나 성과를 임의로 추가하지 않습니다.</span>
+                        </div>
+                        <label for="summary">프로젝트 소개 (직접 수정 가능)</label>
+                        <textarea id="summary" maxlength="2000" placeholder="선택한 디자인 키워드로 초안을 생성하거나 직접 작성할 수 있습니다."></textarea>
+                        <p class="ai-feedback" id="ai-feedback" role="status" aria-live="polite"></p>
                     </div>
-                    <textarea id="summary" maxlength="2000" placeholder="이미지·프로젝트 정보·선택한 작업 분야를 참고해 AI 초안을 만들거나 직접 작성할 수 있습니다."></textarea>
-                    <p class="ai-feedback" id="ai-feedback" role="status" aria-live="polite"></p>
                     <label for="url">실제 사이트 URL</label>
                     <input id="url" placeholder="https://example.com" type="url">
                     <label for="file">목록 썸네일 (4:3 권장 · JPG/PNG/WebP · 5MB 이하)</label>

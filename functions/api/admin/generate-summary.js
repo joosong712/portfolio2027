@@ -12,6 +12,7 @@ export async function onRequestPost(context) {
         const name = String(form.get('name') || '').trim().slice(0, 120)
         const industry = String(form.get('industry') || '').trim().slice(0, 100)
         const category = form.get('category') === 'template' ? 'template' : 'custom'
+        const mode = form.get('mode') === 'keywords' ? 'keywords' : 'summary'
         const role = String(form.get('role') || '').trim().slice(0, 180)
         const workTags = String(form.get('work_tags') || '').trim().slice(0, 400)
         if (!name) return json({error:'프로젝트명을 입력하세요.'}, 400)
@@ -28,11 +29,54 @@ export async function onRequestPost(context) {
             imageUrls.push(`data:image/jpeg;base64,${btoa(binary)}`)
         }
 
+        if (mode === 'keywords') {
+            if (!imageUrls.length) return json({error:'이미지 선택 후 키워드를 분석해 주세요.'},400)
+            const prompt = [
+                '당신은 웹디자인 포트폴리오 이미지 분석가입니다.',
+                '제공된 웹사이트 캡처에서 직접 관찰할 수 있는 시각적 특징과, 업종에 맞는 디자인 콘셉트 제안을 구분하세요.',
+                '시각적 특징(visual): 실제 화면에서 확인되는 색조, 레이아웃, 섹션 구성, 이미지 활용, 타이포 스타일 등 구체적인 사실만 작성하세요.',
+                '콘셉트 제안(concept): 화면 분위기와 업종을 결합한 해석적 키워드입니다. 객관적 사실이 아니라 제안이라는 전제하에 작성하세요.',
+                '각 키워드는 한국어 2~12자 정도의 짧은 명사구로 작성하고, 의미가 겹치는 표현은 제거하세요.',
+                '확인 불가능한 기능(온라인 상담, 예약, 모션, 반응형 등), 구체적인 성과, 고객 의도는 절대로 추정하지 마세요.',
+                '근거가 없으면 키워드를 적게 제시하세요. visual 3~5개, concept 1~3개, 총 최대 8개.',
+                '반드시 JSON만 출력하세요. 예시 형식: {"keywords":[{"text":"관찰한 디자인 특징","type":"visual"},{"text":"제안하는 콘셉트","type":"concept"}]}',
+                `프로젝트명(참고): ${name}`,`업종(참고): ${industry || '미입력'}`,`종류: ${category}`,
+                '첨부 이미지는 한 웹사이트의 여러 구간일 수 있습니다.'
+            ].join('\n')
+            const content = [{type:'text',text:prompt},...imageUrls.map(url=>({type:'image_url',image_url:{url}}))]
+            const result = await context.env.AI.run(MODEL, {messages:[{role:'user',content}],max_tokens:350,temperature:0.2})
+            const output = typeof result?.response === 'string' ? result.response : result?.choices?.[0]?.message?.content
+            const raw = String(output || '').replace(/^```(?:json)?\s*|\s*```$/g,'').trim()
+            let parsed
+            try {parsed = JSON.parse(raw)} catch {
+                const match = raw.match(/\{[\s\S]*\}/)
+                if (match) {try {parsed=JSON.parse(match[0])} catch {}}
+            }
+            if (!Array.isArray(parsed?.keywords)) return json({error:'AI 키워드 형식이 올바르지 않습니다. 다시 분석해 주세요.'},502)
+            const seen = new Set()
+            const keywords = parsed.keywords.filter(item => {
+                const word=String(item?.text||'').trim()
+                if (!word || word.length > 45 || !['visual','concept'].includes(item?.type) || seen.has(word)) return false
+                seen.add(word);return true
+            }).slice(0,8).map(item=>({text:String(item.text).trim(),type:item.type}))
+            return json({keywords,analyzed_image:true})
+        }
+        let suppliedKeywords = []
+        try {suppliedKeywords = JSON.parse(String(form.get('keywords')||'[]'))} catch {}
+        if (!Array.isArray(suppliedKeywords)) suppliedKeywords=[]
+        suppliedKeywords = [...new Set(suppliedKeywords.filter(item=>typeof item==='string').map(item=>item.trim()).filter(Boolean).slice(0,12).map(item=>item.slice(0,45)))]
+        if (!suppliedKeywords.length) return json({error:'키워드를 하나 이상 선택하거나 입력해 주세요.'},400)
+        const style = ['design','planning','balanced'].includes(form.get('style')) ? form.get('style') : 'balanced'
+        const styleLabel = {balanced:'기획 의도와 디자인 특징을 균형 있게',design:'시각적 디자인 선택을 중심으로',planning:'콘텐츠 구성과 업종별 정보 전달 목적을 중심으로'}[style]
         const projectType = category === 'template' ? '업종별 웹사이트 디자인 템플릿' : '개별 맞춤 웹사이트 프로젝트'
         const instructions = [
             '역할: 웹디자이너가 자신의 포트폴리오에 직접 작성하는 한국어 프로젝트 소개문을 다듬는 전문 에디터.',
             '소개글의 목적은 디자인을 칭찬하거나 평가하는 것이 아니라, 작업자가 어떤 업종 특성을 고려했고 화면에서 어떤 디자인 선택을 했는지 설명하는 것입니다.',
-            '작성 시 우선순위: (1) 실제 이미지에서 관찰한 특징 1~2개 (2) 업종과 정보 전달 목적의 연관성 (3) 관찰에 근거한 작업자의 디자인 선택.',
+            '작성 시 우선순위: (1) 사용자가 직접 선택한 키워드 (2) 이미지에서 실제 관찰할 수 있는 특징 (3) 업종별 정보 전달 목적.',
+            '선택된 키워드가 실제 관찰과 모순되면 해당 사실을 만들어내지 말고, 모순되는 표현은 제외하세요.',
+            '콘셉트 키워드는 사용자가 선택한 기획 방향이며 이미지에서 객관적으로 관찰한 사실처럼 단정하지 마세요.',
+            '온라인 상담, 예약, 의료진 소개, 연락처 위치 등 실제 이미지에 확실히 보이지 않는 서비스·기능은 쓰지 마세요.',
+            '같은 명사를 반복하거나 구성·배치·고려 등의 단어를 어색하게 이어 쓰지 마세요.',
             '1인칭 대명사(저는/제가)는 사용하지 말고, 디자이너의 작업 설명처럼 「~을 중심으로 구성했습니다」「~을 고려해 배치했습니다」「~에 중점을 두었습니다」 형태로 작성하세요.',
             '첫 문장은 업종이나 사용 맥락에 따른 디자인 방향 또는 화면 구성 의도로 시작하세요. 프로젝트명 자체나 「~웹사이트에서는」으로 시작하지 마세요.',
             '두 번째 문장은 이미지에서 실제로 보이는 색채, 이미지의 사용 방식, 섹션 배치, 타이포그래피 또는 정보 위계를 구체적으로 연결하세요.',
@@ -52,6 +96,9 @@ export async function onRequestPost(context) {
             `업종: ${industry || '미입력'}`,
             `담당 업무(나열 금지): ${role || '미입력'}`,
             `작업 항목(나열 금지): ${workTags || '미선택'}`,
+            `사용자가 선택한 핵심 키워드(최우선): ${suppliedKeywords.join(', ')}`,
+            `작성 방향: ${styleLabel}`,
+            '키워드는 문장에 전부 나열하지 말고, 실질적인 설명이 가능한 2~4개만 자연스럽게 엮으세요.',
             imageUrls.length ? '첨부한 이미지는 실제 프로젝트 화면입니다. 보이는 시각 요소만 근거로 쓰세요.' : '분석 이미지가 없습니다. 특정 색과 섹션 구성을 추정하지 마세요.'
         ].join('\n')
         const content = imageUrls.length ? [
