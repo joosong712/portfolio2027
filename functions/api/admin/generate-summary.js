@@ -98,7 +98,11 @@ export async function onRequestPost(context) {
             `작업 항목(나열 금지): ${workTags || '미선택'}`,
             `사용자가 선택한 핵심 키워드(최우선): ${suppliedKeywords.join(', ')}`,
             `작성 방향: ${styleLabel}`,
-            '키워드는 문장에 전부 나열하지 말고, 실질적인 설명이 가능한 2~4개만 자연스럽게 엮으세요.',
+            '입력 키워드는 모두 넣어야 하는 체크리스트가 아닙니다. 가장 중요한 2~3개만 고르고 나머지는 과감히 생략하세요.',
+            '선택 기준: 이미지에서 확인되는 핵심 시각 특징을 우선하고, 그 특징이 업종과 어떻게 연결되는지 한 가지 의도로 설명하세요.',
+            '색상명은 여러 개 나열하지 말고 대표 계열만 언급하세요. 부수적 요소(지도, 연락처, 푸터)는 소개글의 핵심 디자인 의도와 연결되지 않으면 생략하세요.',
+            '「디자인했습니다」「구성했습니다」「배치했습니다」와 같은 동사를 반복하지 마세요. 문장마다 서로 다른 정보를 전달하세요.',
+            '문장이 다소 짧더라도 확인되지 않은 기능, 사이트 운영 목적, 콘텐츠 존재 여부를 보충하여 길이를 맞추지 마세요.',
             imageUrls.length ? '첨부한 이미지는 실제 프로젝트 화면입니다. 보이는 시각 요소만 근거로 쓰세요.' : '분석 이미지가 없습니다. 특정 색과 섹션 구성을 추정하지 마세요.'
         ].join('\n')
         const content = imageUrls.length ? [
@@ -112,34 +116,74 @@ export async function onRequestPost(context) {
             const output = typeof result?.response === 'string' ? result.response : result?.choices?.[0]?.message?.content
             return String(output || '').trim().replace(/^```(?:text)?\s*|\s*```$/g,'').replace(/^소개글\s*[:：]\s*/,'').replace(/^['"“”]+|['"“”]+$/g,'').trim().slice(0, 1000)
         }
+        // 1차 생성 후, 반복/추정/나열을 감지하고 필요할 때만 편집 패스를 수행합니다.
         const genericPhrases = [
             '이 프로젝트는','이 템플릿은','업종의 니즈','테마로 합니다','모션그래픽을 포함',
             'UI/UX 디자인과','디자인 템플릿 프로젝트','프로젝트인',
             '전문성과 신뢰감을 전달','사용자 편의성을 고려',
             '에 부합합니다','이 돋보입니다','을 보여줍니다','로 평가됩니다',
             '정보 흐름이 자연스럽습니다','타이포그래피 위계와 적절한 여백',
-            '깔끔한','세련된','적절한','감각적인','차별화된','최적화된'
+            '깔끔한','세련된','적절한','감각적인','차별화된','최적화된',
+            '화면 구성을 중심으로 구성','고려해 배치','정보 전달 목적에 따라',
+            '자연스러운 화면 흐름','연결 지어 전달','시각적 편안함을 강조'
         ]
-        const summaryPenalty = summary => {
+        const unverifiedFeatures = [
+            /온라인\\s*상담/,/온라인\\s*예약/,/예약\\s*(기능|시스템)/,
+            /실시간\\s*(상담|문의)/,/모션그래픽/,/애니메이션/,/반응형\\s*(디자인|구현)/,
+            /고객\\s*유치/,/수주\\s*(성과|증가)/,/접근성\\s*개선/
+        ]
+        const normalizeSummary = value => String(value || '')
+            .replace(/\\r?\\n+/g, ' ')
+            .replace(/\\s{2,}/g, ' ')
+            .replace(/\\s+([,.!?])/g, '$1')
+            .trim()
+        const summaryPenalty = value => {
+            const summary = normalizeSummary(value)
             if (!summary) return 100
             let penalty = 0
             if (name.length >= 8 && summary.includes(name)) penalty += 8
-            for (const word of genericPhrases) if (summary.includes(word)) penalty += 3
-            if (/^(산부인과|병원|피부과|기업|대학교)?\s*(웹사이트|홈페이지)(에서는|는|의)/.test(summary)) penalty += 3
-            if ((summary.match(/웹사이트|홈페이지/g) || []).length >= 3) penalty += 3
-            if (summary.length < 65 || summary.length > 215) penalty += 2
+            for (const phrase of genericPhrases) if (summary.includes(phrase)) penalty += 3
+            if (/^(산부인과|병원|피부과|기업|대학교)?\\s*(웹사이트|홈페이지)(에서는|는|의)/.test(summary)) penalty += 3
+            if ((summary.match(/웹사이트|홈페이지/g) || []).length >= 2) penalty += 2
+            if (summary.length < 65 || summary.length > 210) penalty += 2
+            const sentences = summary.split(/[.!?]+/).map(v => v.trim()).filter(Boolean)
+            if (sentences.length > 3 || sentences.length < 2) penalty += 2
+            // 반복적인 동사 종결, 불필요한 열거, 동어 반복을 감지
+            for (const verb of ['구성했습니다','배치했습니다','강조했습니다','고려했습니다']) {
+                if (summary.split(verb).length > 2) penalty += 4
+            }
+            if (/구성.{0,14}구성|배치.{0,14}배치|고려.{0,14}고려/.test(summary)) penalty += 5
+            if ((summary.match(/,|、/g) || []).length >= 5) penalty += 2
+            for (const pattern of unverifiedFeatures) if (pattern.test(summary)) penalty += 5
             return penalty
         }
-        let summary = await runAI(content)
-        if (summaryPenalty(summary) > 0) {
-            const feedback = `\n\n[수정 요청] 이전 글: ${summary}\n위 글은 외부 평가자의 설명처럼 보이거나 상투적 표현·제목 반복이 포함되어 부적합합니다. 실제 화면에서 관찰 가능한 디자인 선택을 중심으로, 디자이너가 직접 설명하듯 2~3문장으로 완전히 새로 써주세요. 이전 문장 구조와 추상적 수식어는 재사용하지 마세요.`
+        let summary = normalizeSummary(await runAI(content))
+        if (!summary) return json({error:'AI가 소개글을 생성하지 못했습니다. 다시 시도해 주세요.'},502)
+
+        const firstScore = summaryPenalty(summary)
+        if (firstScore > 0) {
+            const feedback = [
+                '[편집 검수]',
+                `다음 소개글을 디자이너의 포트폴리오 문장으로 다듬으세요: ${summary}`,
+                '기존 문장을 유지할 필요는 없습니다. 아래 기준을 모두 적용하여 2~3문장으로 새로 작성하세요.',
+                '1. 사용자가 선택한 키워드 가운데 핵심 2~3개만 사용하고 나머지는 생략하세요.',
+                '2. 디자인 요소를 나열하지 말고 업종 특성/기획 의도와 실제 화면에서 관찰한 요소를 연결하세요.',
+                '3. 비슷한 종결어미 및 「구성/배치/고려」의 반복, 부자연스러운 연결, 업종·제목 반복을 제거하세요.',
+                '4. 지도·연락처·푸터는 핵심 의도가 아니라면 빼세요.',
+                '5. 이미지에 없는 기능이나 성과를 추정하지 마세요. 관찰 근거가 부족하면 설명을 줄이세요.',
+                '6. 설명에 대한 평가나 해설을 붙이지 말고 완성된 소개글만 출력하세요.',
+            ].join('\\n')
             const revisedContent = imageUrls.length ? [
-                {type:'text',text:instructions+feedback},
+                {type:'text',text:instructions+'\\n\\n'+feedback},
                 ...imageUrls.map(url=>({type:'image_url',image_url:{url}}))
-            ] : instructions+feedback
-            const revised = await runAI(revisedContent)
-            // 재생성 결과가 더 나쁘면 기존의 상대적으로 나은 문장을 유지합니다.
-            if (revised && summaryPenalty(revised) <= summaryPenalty(summary)) summary = revised
+            ] : instructions+'\\n\\n'+feedback
+            try {
+                const revised = normalizeSummary(await runAI(revisedContent))
+                // 품질 검사에서 악화되는 경우 원문을 보존합니다.
+                if (revised && summaryPenalty(revised) < firstScore) summary = revised
+            } catch {
+                // 2차 검수만 실패한 경우 1차 생성 결과는 정상 반환합니다.
+            }
         }
         if (!summary) return json({error:'AI가 소개글을 생성하지 못했습니다. 다시 시도해 주세요.'}, 502)
         return json({summary, analyzed_image: imageUrls.length > 0})
