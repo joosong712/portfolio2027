@@ -1,7 +1,7 @@
 import {json,requireAdmin,cleanProject,projectRecord,publicOrigin} from '../../_shared.js'
 export async function onRequestGet(ctx){
   const denied=await requireAdmin(ctx);if(denied)return denied
-  try{const {results}=await ctx.env.DB.prepare('SELECT * FROM projects ORDER BY sort_order ASC,id DESC LIMIT 500').all();return json({projects:results.map(r=>projectRecord(r,publicOrigin(ctx.env,ctx.request),true))})}
+  try{const {results}=await ctx.env.DB.prepare('SELECT * FROM projects ORDER BY sort_order ASC, CASE WHEN category='template' THEN id END ASC, CASE WHEN category='custom' THEN id END DESC LIMIT 500').all();return json({projects:results.map(r=>projectRecord(r,publicOrigin(ctx.env,ctx.request),true))})}
   catch{return json({error:'관리자 데이터를 불러오지 못했습니다.'},503)}
 }
 export async function onRequestPost(ctx){

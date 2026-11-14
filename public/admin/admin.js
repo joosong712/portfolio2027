@@ -239,18 +239,28 @@ $('tech-options').addEventListener('click', event => {
     button.setAttribute('aria-pressed', String(selectedTech.has(button.dataset.tech)))
 })
 
-// 세로로 긴 캡처는 AI 입력용 사본만 축소. 등록용 R2 원본에는 영향 없음.
-async function analysisImage(file) {
-    if (!file) return null
+// 긴 웹사이트 캡처를 상단·중단·하단으로 분할하여 주요 섹션을 선명하게 분석합니다.
+// 등록용 원본 이미지는 그대로 유지합니다.
+async function analysisImages(file) {
+    if (!file) return []
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw Error('지원하지 않는 이미지 형식입니다.')
     const image = await createImageBitmap(file)
     try {
-        const scale = Math.min(1, 1024 / image.width, 1400 / image.height)
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.max(1, Math.round(image.width * scale))
-        canvas.height = Math.max(1, Math.round(image.height * scale))
-        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
-        return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(Error('이미지 축소 실패')), 'image/jpeg', 0.82))
+        const ratio = image.height / image.width
+        const sections = ratio > 2.4 ? [0, 0.5, 1] : ratio > 1.4 ? [0, 1] : [0]
+        const cropHeight = Math.min(image.height, Math.round(image.width * 0.95))
+        const result = []
+        for (let i = 0; i < sections.length; i++) {
+            const top = Math.round((image.height - cropHeight) * sections[i])
+            const scale = Math.min(1, 1024 / image.width, 900 / cropHeight)
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.max(1, Math.round(image.width * scale))
+            canvas.height = Math.max(1, Math.round(cropHeight * scale))
+            canvas.getContext('2d').drawImage(image, 0, top, image.width, cropHeight, 0, 0, canvas.width, canvas.height)
+            const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(Error('이미지 분석 사본 생성 실패')), 'image/jpeg', 0.78))
+            result.push(blob)
+        }
+        return result
     } finally {
         image.close()
     }
@@ -269,15 +279,19 @@ async function generateSummary() {
     try {
         const payload = new FormData()
         payload.append('name', name)
+        payload.append('category', read('category'))
         payload.append('industry', read('industry'))
         payload.append('role', getRole())
         payload.append('work_tags', getTech().join(', '))
-        if (file) payload.append('image', await analysisImage(file), 'analysis.jpg')
+        if (file) {
+            const images = await analysisImages(file)
+            images.forEach((image, index) => payload.append('image', image, `analysis-${index + 1}.jpg`))
+        }
         const result = await api('/api/admin/generate-summary', {method:'POST', body:payload})
         if (requestNumber !== aiRequestNumber) return
         if ($('summary').value.trim() && !confirm('기존 소개글을 AI 초안으로 교체할까요?')) return
         $('summary').value = result.summary
-        $('ai-feedback').textContent = file ? '이미지와 입력 정보를 참고한 AI 초안입니다. 실제 구현 내용과 일치하는지 확인해 주세요.' : '입력 정보를 기반으로 생성된 AI 초안입니다. 이미지를 선택하면 디자인 분석이 가능합니다.'
+        $('ai-feedback').textContent = file ? '화면의 상·중·하단과 작업 정보를 참고한 초안입니다. 실제 기획·구현 내용은 확인해 주세요.' : '입력 정보를 기반으로 생성된 AI 초안입니다. 이미지를 선택하면 디자인 분석이 가능합니다.'
     } catch (error) {
         if (requestNumber === aiRequestNumber) $('ai-feedback').textContent = `AI 생성 실패: ${error.message}`
     } finally {
